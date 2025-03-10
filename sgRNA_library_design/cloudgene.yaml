@@ -1,0 +1,280 @@
+id: CRISPR-BEdiscovered
+name: CRISPR-BEdiscovered
+version: 1.0a
+description: "A Nextflow CRISPR library preparation pipeline."
+author: Vincent Chapdelaine
+
+workflow:
+
+  steps:
+
+    - name : Running CRISPR-BEdiscovered
+      type : nextflow
+      script : main.nf
+      params:
+        project: "${CLOUDGENE_JOB_NAME}"
+        protein_id : "${protein_id}"
+
+      groups :
+        - id : "Validation"
+          label : "Validate Inputs"
+        - id : "Crispr_Positive_library_prep"
+          label : "Positive Library Preparation"
+        - id : "Crispr_Negative_library_prep"
+          label : 'Negative Library Preparation'
+        - id : "Crispr_Target_library_prep"
+          label : 'Target Library Preparation'
+        - id : "Finalization"
+          label : 'Combination and Report'
+      processes:
+        - process: "Validate"
+          view: status
+          label: 'Validate Inputs and Fetch Queried Regions'
+          group: 'Validation'
+        - process: "Crispr_Positive_library_prep:CRISPRverse"
+          view: label
+          label: "Running CRISPRverse"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:CRISPRverse"
+          view: label
+          label: "Running CRISPRverse"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:CRISPRverse"
+          view: label
+          label: "Running CRISPRverse"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:OnTarget"
+          view: label
+          label: "Calculating on-target efficiency"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:OnTarget"
+          view: label
+          label: "Calculating on-target efficiency"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:OnTarget"
+          view: label
+          label: "Calculating on-target efficiency"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:OffTarget"
+          view: label
+          label: "Filtering Based on Off-Targets"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:OffTarget"
+          view: label
+          label: "Filtering Based on Off-Targets"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:OffTarget"
+          view: label
+          label: "Filtering Based on Off-Targets"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:Basic_Annotation"
+          view: label
+          label: "Predicting Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:Basic_Annotation"
+          view: label
+          label: "Predicting Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:Basic_Annotation"
+          view: label
+          label: "Predicting Mutations"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:annotate"
+          view: label
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:annotate"
+          view: label
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:annotate"
+          view: label
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Target_library_prep"
+        - process: "Finalization:combine_csv"
+          view: label
+          label: "Concatenate Libraries"
+          group: "Finalization"
+        - process: "Finalization:combine_vep"
+          view: label
+          label: "Concatenate Annotations"
+          group: "Finalization"
+        - process: "Finalization:report"
+          view: label
+          label: "Preparation Report"
+          group: "Finalization"
+        - process: "Crispr_Negative_library_prep:to_excel"
+          view: label
+          label: "Finalizing Output"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:to_excel"
+          view: label
+          label: "Finalizing Output"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:to_excel"
+          view: label
+          label: "Finalizing Output"
+          group: "Crispr_Positive_library_prep"
+
+
+
+  inputs:
+
+    - id : protein_id
+      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>)
+      type: textarea
+      required : true
+      details: A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 80k bp in total (with controls).
+
+    - id : genome
+      description : Genome Build
+      required : true
+      type : list
+      value : 'hg38'
+      values :
+        hg38 : 'Homo sapien - hg38'
+        mm39 : 'Mus musculus - mm39'
+        GRCg7b : 'Gallus Gallus - bGalGal1.mat.broiler.GRCg7b'
+        ASM584v2 : 'E. coli - ASM584v2'
+        TAIR10 : 'A. Thaliana - TAIR10'
+
+    - id : MANE
+      description : "Fetch regions based solely on MANE project's isoform"
+      required : true
+      type: checkbox
+      value: false
+      values:
+        true: true
+        false: false
+
+    - id : border
+      description : 'Flanking regions (bp) :'
+      required : false
+      details : "Number [0-100]"
+      type : number
+      value : 30
+
+    - id: myseparator
+      type: separator
+
+    - id : casName
+      description : Cas variant <br> (<a href="http://crispor.gi.ucsc.edu/manual/manual.html#enzymes" target="_blank">Details</a>)
+      required : true
+      type : list
+      value : 'SpCas9'
+      values :
+        SpCas9 : "20 bp - NGG - SpCas9"
+        SpCas9-NG : "20 bp - NG - SpCas9-NG"
+        SpCas9-NRRH : "20 bp - NRRH - SpCas9-NRRH"
+        SpCas9-NRTH : "20 bp - NRTH - SpCas9-NRTH"
+        SpCas9-NRCH : "20 bp - NRCH - SpCas9-NRCH"
+        SpCas9(VQR/VRQR) : "20 bp - NGA - SpCas9(VQR/VRQR)"
+        xCas9 : "20 bp - NG - xCas9"
+        SpG : "20 bp - NG - SpG"
+        SpRY : "20 bp - NNN - SpRY"
+        SpCas9-CP1012 : "20 bp - NGG - SpCas9-CP1012"
+        SpCas9-CP1028 : "20 bp - NGG - SpCas9-CP1028"
+        SpCas9-CP1041 : "20 bp - NGG - SpCas9-CP1041"
+        SpCas9-1249 : "20 bp - NGG - SpCas9-1249"
+        SpCas9-(HF1/HF2) : "20 bp - NGG - SpCas9-(HF1/HF2)"
+        eSpCas9 : "20 bp - NGG - eSpCas9"
+        HypaCas9 : "20 bp - NGG - HypaCas9"
+        Sniper-Cas9 : "20 bp - NGG - Sniper-Cas9"
+        evoCas9 : "20 bp - NGG - evoCas9"
+        ScCas9 : "20 bp - NNG - ScCas9"
+        ScCas9+ : "20 bp - NNG - ScCas9+"
+        Spymac : "20 bp - NAA - Spymac"
+        iSpymac : "20 bp - NAA - iSpymac"
+        SaCas9 : "22 bp - NNGRRT - SaCas9"
+        SaCas9-KKH : "22 bp - NNNRRT - SaCas9-KKH"
+        St1Cas9-LMD9 : "22 bp - NNRGAA - St1Cas9-LMD9"
+        SauriCas9 : "22 bp - NNGG - SauriCas9"
+        CjCas9 : "NNNNNRYAC - CjCas9"
+        LbCas12a : "23 bp - TTTV - LbCas12a"
+        LbCas12a-RVRR : "23 bp - RVRR - LbCas12a-RVRR"
+        AsCas12a : "23 bp - TTTV - AsCas12a"
+        enAsCas12a : "23 bp - TTNN - enAsCas12a"
+
+    - id : Editors
+      description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEeasy/More_information/#editors" target="_blank">Details</a>)
+      required : true
+      type : textarea
+      details : 'Space-delimited description of editors. Columns: id, start window of activity, end window of activity, nucleotide modified, resulting nucleotide.'
+      value : "FNLS 3 8 C T\nCDA-BE4 -1 9 C T\nABE8 4 8 A G"
+
+
+    - id : GC
+      description : GC mutation abstraction
+      required : true
+      type: checkbox
+      value: true
+      values:
+        true: true
+        false: false
+      details : C mutation in GC patterns will not be mutated in annotations
+
+    - id : CFD_Count
+      description : 'Limit count of predicted off-targets alignement' 
+      required : false
+      type : number
+      details : 'Accepted range: 1-10 ; blank for unfiltered'
+
+    - id : CFD_Threshold
+      description : Threshold score for off-targets (CDF score)
+      required : false
+      type : number
+      details : Float number ]0-1]
+      details : 'Scoring is designed for spCAS9 but experimentaly allowed on all CAS9 ; leave blank for unfiltered,'
+    
+    - id : feature
+      description : 'list of space delimited protein features to be considered'
+      required : false
+      visible : false
+      value : 'CDS'
+      type : text
+      details : 'Gene feature possible includes : gene, CDS (default), mRNA, exon, five_prime_UTR, three_prime_UTR, rRNA, tRNA, ncRNA, tmRNA, transcript, mobile_genetic_element, origin_of_replication, promoter and repeat_region \n ** Only applies to Protein and not custom regions'
+
+    - id : Consequence_choice
+      description : 'VEP pick basis'
+      required : false
+      value : 'pick' 
+      type : list
+      visible : false
+      values :
+        pick : "Ensembl pick"
+        canonical : "canonical"
+        mane : "mane"
+      details : 'If there is more than one predicted consequence (e.g. isoforms), on which basis should they be reported'
+
+    - id: myseparator
+      type: separator
+
+    - id : protein_Pos 
+      description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEeasy/More_information/" target="_blank">Details</a>)
+      type: textarea
+      details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
+      required : false
+
+    - id: myseparator
+      type: separator
+
+    - id : protein_Neg
+      description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEeasy/More_information/" target="_blank">Details</a>)
+      details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
+      type: textarea
+      required : false
+
+
+  outputs:
+
+    - id: Libraries
+      description: Excel files containing libraries with annotations
+      type: local_folder
+
+    - id: Auxiliary_files
+      description: 'Auxiliary files'
+      type: local_folder
+
+    - id: Report_output 
+      description: 'Overview of guides'
+      type: local_folder

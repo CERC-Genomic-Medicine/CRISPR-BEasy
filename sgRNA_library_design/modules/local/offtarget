@@ -1,0 +1,18 @@
+process OffTarget {
+
+    input:
+    path(offtarget)
+    path(scores)
+
+
+    output:
+    path("*.filtered_score"), emit: filtered
+    path("*_histogram_offtarget_treshold.pdf"), emit: image
+
+
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/offtarget/", pattern: "*_histogram_offtarget_treshold.pdf", mode: "copy"
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/offtarget/", pattern: "*.filtered_score", mode: "copy"
+    """
+    offtarget.py -I ${offtarget} -S ${scores} -P ${params.PAM} -M ${params.CFD_files}/mismatch_score.pkl -T ${params.CFD_Threshold} -C ${params.CFD_Count} -O ${offtarget.getSimpleName()}
+    """
+}

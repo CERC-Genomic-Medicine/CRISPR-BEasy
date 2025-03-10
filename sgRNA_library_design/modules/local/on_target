@@ -1,0 +1,20 @@
+process OnTarget {
+label "OnTarget"
+    input:
+    path(data)
+    path(aling)
+
+
+    output:
+    path("*.scored.tsv"), emit: scored
+    path("*_alignements.tsv")
+
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Crispr/", pattern: "*.scored.tsv", mode: "copy"
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Crispr/", pattern: "*_alignements.tsv", mode: "copy"
+
+"""
+source ${params.Python_env}
+onTarget.py -I ${data} -C ${params.casName} -A ${aling}  -O ${data.getSimpleName()}
+
+    """
+}

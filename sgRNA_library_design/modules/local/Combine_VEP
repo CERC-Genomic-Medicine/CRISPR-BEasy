@@ -1,0 +1,18 @@
+process combine_vep {
+
+input :
+   tuple val(editor), path(annotation)
+   each path(remove)
+
+  output : 
+    path("*_final_vep.txt") , emit: VEP 
+      """
+source ${params.Python_env}
+for i in *.tsv; do
+	sed -i '/##/d' \$i ; sed -i 's/#Uploaded_variation/ID/g' \$i
+done
+
+Combine_VEP.py -e $editor -r $remove
+
+"""
+}

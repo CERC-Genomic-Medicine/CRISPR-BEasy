@@ -1,0 +1,16 @@
+
+process to_excel {
+  input :
+   path(Base_annotation)
+   path(vep)
+   val(output)
+
+  output : 
+    path("*.xlsx")
+
+
+publishDir "${params.Libraries}/", pattern: "*.xlsx", mode: "copy"
+      """
+      to_excel.py --vep ${vep} --csv ${Base_annotation} --out ${output}
+      """
+}

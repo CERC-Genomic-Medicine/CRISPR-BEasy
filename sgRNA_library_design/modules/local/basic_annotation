@@ -1,0 +1,198 @@
+process Basic_Annotation {
+
+    input:
+    tuple path(score), path(bed)
+    each path(editors)
+
+    output:
+    path("*.csv"), emit : CSV
+    path("*_empties.txt"), emit : empties 
+    path("*.per_guides.vcf.gz") , emit : VCF
+    
+    publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations", pattern: "*.csv", mode: "copy"
+    publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.per_guides.vcf.gz", mode: "copy"
+
+script:
+
+def pam
+def length
+def pamLength
+switch (params.casName) {
+    case "SpCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-NG":
+        pam = "NG"
+        length = 20
+        pamLength = 2
+        break
+    case "SpCas9-NRRH":
+        pam = "NRRH"
+        length = 20
+        pamLength = 4
+        break
+    case "SpCas9-NRTH":
+        pam = "NRTH"
+        length = 20
+        pamLength = 4
+        break
+    case "SpCas9-NRCH":
+        pam = "NRCH"
+        length = 20
+        pamLength = 4
+        break
+    case "SpCas9(VQR/VRQR)":
+        pam = "NGA"
+        length = 20
+        pamLength = 3
+        break
+    case "xCas9":
+        pam = "NG"
+        length = 20
+        pamLength = 2
+        break
+    case "SpG":
+        pam = "NG"
+        length = 20
+        pamLength = 2
+        break
+    case "SpRY":
+        pam = "NNN"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-CP1012":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-CP1028":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-CP1041":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-1249":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-(HF1/HF2)":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "eSpCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "HypaCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "Sniper-Cas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "evoCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "ScCas9":
+        pam = "NNG"
+        length = 20
+        pamLength = 3
+        break
+    case "ScCas9+":
+        pam = "NNG"
+        length = 20
+        pamLength = 3
+        break
+    case "Spymac":
+        pam = "NAA"
+        length = 20
+        pamLength = 3
+        break
+    case "iSpymac":
+        pam = "NAA"
+        length = 20
+        pamLength = 3
+        break
+    case "SaCas9":
+        pam = "NNGRRT"
+        length = 22
+        pamLength = 6
+        break
+    case "SaCas9-KKH":
+        pam = "NNNRRT"
+        length = 22
+        pamLength = 6
+        break
+    case "St1Cas9-LMD9":
+        pam = "NNRGAA"
+        length = 22
+        pamLength = 6
+        break
+    case "SauriCas9":
+        pam = "NNGG"
+        length = 22
+        pamLength = 4
+        break
+    case "CjCas9":
+        pam = "NNNNNRYAC"
+        length = 22
+        pamLength = 9
+        break
+    case "LbCas12a":
+        pam = "TTTV"
+        length = 23
+        pamLength = 4
+        break
+    case "LbCas12a-RVRR":
+        pam = "RVRR"
+        length = 23
+        pamLength = 4
+        break
+    case "AsCas12a":
+        pam = "TTTV"
+        length = 23
+        pamLength = 4
+        break
+    case "enAsCas12a":
+        pam = "TTNN"
+        length = 23
+        pamLength = 4
+        break
+    default:
+        pam = "Unknown"
+        length = 0
+        pamLength = 0
+}
+    """
+source ${params.Python_env}
+awk '{print "##contig=<ID="\$1",length="\$2">"}' ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.fa.fai > header_contigs.txt
+    if [ ${params.GC} ]; then
+     GC_flag='--gc -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.fa'
+    else
+     GC_flag=''
+    fi
+    basic_annotation.py  --Editor ${editors} -B ${bed} -S ${score} -L ${pamLength} -R  \${GC_flag} -n ${score.getSimpleName().split('_')[0]} -O ${score.getSimpleName()} --head header_contigs.txt
+        for vcf in *.vcf ;
+        do
+                bcftools view \$vcf -Oz -o "\$vcf".gz
+        done	
+    """
+
+}
+
+

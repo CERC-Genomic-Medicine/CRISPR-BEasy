@@ -1,0 +1,301 @@
+process Validate {
+
+input:
+    path(targets, stageAs: 'target.txt')
+    path(positive, stageAs: 'positive.txt')
+    path(negative, stageAs: 'negative.txt')
+    path(editors)
+
+    output:
+    path("Study_Target_library.bed"), emit: target_bed
+    path("Positive_Controls_library.bed"), emit: positive_bed , optional: true
+    path("Negative_Controls_library.bed"), emit: negative_bed , optional: true
+    path("*.err"), emit: errors , optional: true
+
+
+publishDir "${params.Auxiliary_files}/Genomic_regions/", pattern: "*.bed", mode: "copy"
+
+
+    script:
+
+def No_CFD = "F"
+def CFD_threshold = "F"
+def CFD_count = "F"
+
+if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
+    No_CFD = "T"
+}
+
+else {
+    if ( params.CFD_Threshold < 0 || params.CFD_Threshold > 1) {
+         CFD_threshold = "T"
+     }
+// Check if params.CFD_Count is not an integer between [1-10]
+    if (!(params.CFD_Count instanceof Integer) || params.CFD_Count < 1 || params.CFD_Count > 10) {
+          CFD_count = "T"
+    }
+}
+
+def pam
+def length
+def pamLength
+switch (params.casName) {
+    case "SpCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-NG":
+        pam = "NG"
+        length = 20
+        pamLength = 2
+        break
+    case "SpCas9-NRRH":
+        pam = "NRRH"
+        length = 20
+        pamLength = 4
+        break
+    case "SpCas9-NRTH":
+        pam = "NRTH"
+        length = 20
+        pamLength = 4
+        break
+    case "SpCas9-NRCH":
+        pam = "NRCH"
+        length = 20
+        pamLength = 4
+        break
+    case "SpCas9(VQR/VRQR)":
+        pam = "NGA"
+        length = 20
+        pamLength = 3
+        break
+    case "xCas9":
+        pam = "NG"
+        length = 20
+        pamLength = 2
+        break
+    case "SpG":
+        pam = "NG"
+        length = 20
+        pamLength = 2
+        break
+    case "SpRY":
+        pam = "NNN"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-CP1012":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-CP1028":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-CP1041":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-1249":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "SpCas9-(HF1/HF2)":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "eSpCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "HypaCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "Sniper-Cas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "evoCas9":
+        pam = "NGG"
+        length = 20
+        pamLength = 3
+        break
+    case "ScCas9":
+        pam = "NNG"
+        length = 20
+        pamLength = 3
+        break
+    case "ScCas9+":
+        pam = "NNG"
+        length = 20
+        pamLength = 3
+        break
+    case "Spymac":
+        pam = "NAA"
+        length = 20
+        pamLength = 3
+        break
+    case "iSpymac":
+        pam = "NAA"
+        length = 20
+        pamLength = 3
+        break
+    case "SaCas9":
+        pam = "NNGRRT"
+        length = 22
+        pamLength = 6
+        break
+    case "SaCas9-KKH":
+        pam = "NNNRRT"
+        length = 22
+        pamLength = 6
+        break
+    case "St1Cas9-LMD9":
+        pam = "NNRGAA"
+        length = 22
+        pamLength = 6
+        break
+    case "SauriCas9":
+        pam = "NNGG"
+        length = 22
+        pamLength = 4
+        break
+    case "CjCas9":
+        pam = "NNNNNRYAC"
+        length = 22
+        pamLength = 9
+        break
+    case "LbCas12a":
+        pam = "TTTV"
+        length = 23
+        pamLength = 4
+        break
+    case "LbCas12a-RVRR":
+        pam = "RVRR"
+        length = 23
+        pamLength = 4
+        break
+    case "AsCas12a":
+        pam = "TTTV"
+        length = 23
+        pamLength = 4
+        break
+    case "enAsCas12a":
+        pam = "TTNN"
+        length = 23
+        pamLength = 4
+        break
+    default:
+        pam = "Unknown"
+        length = 0
+        pamLength = 0
+}
+
+    """
+    #!/usr/bin/env bash
+    source ${params.Python_env}
+    error_array=()
+    good_array=()
+    if [ "${params.genome}" == "ASM584v2" ]; then
+	protist_flag='--protist'
+else 
+protist_flag=''
+fi
+
+    good_array+=("<LI> Parameter Genome : ${params.genome}")
+    good_array+=("<LI> Parameter Flanking Region : ${params.border} bp (bases to consider on each side of the selected gene feature)")
+    good_array+=("<LI> Parameter Cas9 Orthologue : ${params.casName}")
+    good_array+=("<LI> Parameter Gene Feature : ${params.feature} (feature to be investigated)")
+    if [ "${params.MANE}" == "true" ]; then
+      Mane_flag='-M'
+      good_array+=("<LI> Parameter MANE : true (Isoform analysed will correspond to the MANE project)")
+    else
+      Mane_flag=''
+      good_array+=("<LI> Parameter MANE : false (All isoforms will be considered.)")
+    fi
+    good_array+=("<LI> Parameter GC : ${params.GC} (C within GC pattern will not be mutated in mutation prediction if specified)")
+
+if [ "${length}" == "20" ] ; then
+if [ ${No_CFD} == "T" ] ; then
+    good_array+=("<LI> sgRNA will not be filtered by off-target (CFD Count or Threshold is not set)")
+else
+    if [ ${CFD_count} == "T" ]; then
+        error_array+=("<LI> The number used for Count threshold (i.e., number of off-targets to eliminate a guide) must be an integer between 0-10")
+    fi
+    if [ ${CFD_threshold} == "T" ]; then
+	error_array+=("<LI> The score threshold for off-target consideration must be between 0 and 1")
+    fi
+good_array+=('<LI> Parameter Count Threshold: guides with more than ${params.CFD_Count} off-targets of score >= ${params.CFD_Threshold} are filtered')
+fi
+else
+  good_array+=("<LI> CFD can not be calculated (length is not equal to spCas9)")
+fi
+
+
+   if [ -e ${params.Gen_pipeline_data}/genomes/${params.genome}_encode.bed ]; then
+	encode='-e ${params.Gen_pipeline_data}/genomes/${params.genome}_encode.bed'
+   else
+        encode=''
+   fi
+    validate.py -T ${targets} -N ${negative} -P ${positive} \$Mane_flag -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/CRISPOR_genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} \${protist_flag}
+   
+   if [ -e errors.err ]; then
+    mapfile -t new_lines < "errors.err"
+    error_array+=("\${new_lines[@]}")
+   fi
+
+    if [ "\${#error_array[@]}" -gt 0 ]; then
+     	echo "::group type=error::"
+     	echo "<b> The following error were detected : </b>"
+     	for t in "\${error_array[@]}"; do
+     	echo "\$t"
+     	done
+	echo "\n"
+     	echo "::endgroup::"
+     	exit 1
+    elif [ -e fetch.err ]; then
+      mapfile -t new_lines < "fetch.err"
+      error_array+=("\${new_lines[@]}")
+      echo "::group type=error::"
+      echo "<b> The following error were detected : </b>"
+      for t in "\${error_array[@]}"; do
+    	 echo "\$t"
+      done
+      echo "\n"
+      echo "::endgroup::"
+      exit 3
+    elif [ -e editors.err ]; then
+      echo "::group type=error::"
+      echo "<b> The following error were detected : </b>"
+      while IFS= read -r line; do
+        echo "\$line"
+        done < editors.err
+      echo "\n"
+      echo "::endgroup::"
+      exit 2
+    else
+        echo "::group type=message::"
+	echo " <b> Parameter List : </b>"
+	echo "<UL>"
+	echo "<LI> \$(grep -c ^ target.txt) entries as gene(s) of interest"
+	echo "<LI> \$(grep -c ^ negative.txt) entries as negative control gene(s)"
+	echo "<LI> \$(grep -c ^ positive.txt) entries as positive control gene(s)"
+        for t in "\${good_array[@]}"; do
+          echo "\$t"
+        done
+	echo "</UL> \n"
+	echo "::endgroup::"
+     fi
+
+    """
+}

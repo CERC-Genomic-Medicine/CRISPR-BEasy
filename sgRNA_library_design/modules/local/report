@@ -1,0 +1,29 @@
+process report {
+  input :
+   path(Base_annotation)
+   path(vep)
+
+  output : 
+    path("*.html"), emit: html
+    path("sgRNA_location*"), optional: true, emit: BAM
+    path("*json*"), optional: true,  emit: report
+
+ publishDir "${params.Report_output}/ancillary_files/", pattern: "sgRNA_location*", mode: "copy"
+ publishDir "${params.Report_output}/ancillary_files/", pattern: "*.json", mode: "copy"
+ publishDir "${params.Report_output}/", pattern: "*.html", mode: "copy"
+
+	script:        
+	if (params.genome == "hg38")
+     """
+      report_script.py -c ${Base_annotation} -v *vep.txt
+      bedToBam -i guides.bed -g ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.fa.fai > temp.bam
+      samtools sort temp.bam -o sgRNA_location.bam
+      rm temp.bam
+      samtools index sgRNA_location.bam
+      cp ${projectDir}/assets/report_templates/report_${params.genome}.html report.html
+      """
+	else 
+      	"""
+      cp ${projectDir}/assets/report_templates/report_unavaillable.html report.html
+	"""
+}

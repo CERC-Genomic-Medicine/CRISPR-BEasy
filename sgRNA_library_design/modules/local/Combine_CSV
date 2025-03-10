@@ -1,0 +1,13 @@
+process combine_csv {
+  input :
+   path(annotation)
+
+  output : 
+    path("*_final.csv"), emit: CSV
+    path("*.txt"), emit: remove
+      """
+source ${params.Python_env}
+Combine_CSV.py -e 'General'
+
+"""
+}
