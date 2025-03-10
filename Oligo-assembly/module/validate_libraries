@@ -1,0 +1,52 @@
+if(params.outdir == "default" || params.outdir == null) {
+    params.pubDir = "output/${params.project}/validate/"
+} else {
+    params.pubDir = "${params.outdir}/validate/"
+}
+
+
+process Validate_libraries {
+
+    input:
+    path(targets, stageAs: 'target.txt')
+    path(positive, stageAs: 'positive.txt')
+    path(negative, stageAs: 'negative.txt')
+    
+    output:
+    path("*.csv"), emit: CSV
+    path("Libraries_duplicate.txt"), optional : true
+
+publishDir "${params.pubDir}/Libraries_duplicate.txt", pattern: "Libraries_duplicate.txt", mode: "copy"
+    """
+exited=0
+validate_libraries.py -t ${targets} -p ${positive} -n ${negative} -o Libraries
+
+error_array=()
+if [ -e Libraries.err ]; then
+    mapfile -t new_lines < "Libraries.err"
+    error_array+=("\${new_lines[@]}")
+fi
+
+if [ "\${#error_array[@]}" -gt 0 ]; then
+    echo "::group type=error::"
+    echo "<b> The following errors were detected: </b>"
+    for t in "\${error_array[@]}"; do
+        echo "\$t"
+    done
+    echo "::endgroup::"
+    exited=1
+fi
+
+if [ -e Libraries_duplicate.txt ]; then
+    echo "::error:: There were duplications within the libraries observed. By definition, we expect a maximum of 1 annotation per sgRNA per editor and 1 sgRNA per position."
+    exited=1
+fi
+
+if [ -e editor_overlap.warning ]; then
+    echo "::warning:: Editors were found in multiple libraries, but they did not overlap perfectly."
+fi
+
+exit \$exited
+
+    """
+}

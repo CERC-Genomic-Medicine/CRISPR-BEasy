@@ -1,0 +1,87 @@
+if(params.outdir == "default" || params.outdir == null) {
+    params.pubDir = "output/${params.project}/validate/"
+} else {
+    params.pubDir = "${params.outdir}/validate/"
+}
+
+
+process Validate_Instructions {
+    publishDir "${params.pubDir}/", mode: 'copy' 
+
+    input:
+    path(Instructions)
+    path(Positive)
+
+    output:
+    path("Instructions_validated.txt"), emit : validated
+
+    """
+error_array=()
+good_array=()
+
+if [ -n "${params.Library_negative}" ]; then
+  # Check if params.N_negative is a positive integer or zero
+  if [[ -z "${params.N_negative}" ]] || [[ ! "${params.N_negative}" =~ ^[0-9]+\$ ]] || [ "${params.N_negative}" -le 0 ]; then
+    error_array+=("- Parameter <b>sgRNA negative control</b>: Must be positive and an integer.")
+  elif [ "${params.N_negative}" -eq 0 ]; then
+    good_array+=("- Parameter <b>sgRNA negative control</b>: All guides are selected.")
+  else
+    good_array+=("- Parameter <b>sgRNA negative control</b>: minimally ${params.N_negative} guides will be selected. \n * (It is possible extras will be used to complete concatemer if required.)")
+  fi
+fi
+
+if [ -s "${Positive}" ] ; then 
+  validate_instructions.py -i ${Instructions} -x ${Positive}
+else 
+  good_array+=(" Positive control library was absent, instructions are disregarded.")
+  touch Instructions_validated.txt
+fi
+
+validate_primers.py --Primer_Customs "${params.Primer_forward},${params.Primer_reverse}"
+
+if [ -e "Instructions.err" ]; then
+  mapfile -t new_lines < "Instructions.err"
+  error_array+=("\${new_lines[@]}")
+fi
+
+if [ -e "primer.err" ]; then
+  mapfile -t new_lines < "primer.err"
+  error_array+=("\${new_lines[@]}")
+fi
+
+if [ -e "primer.ok" ]; then
+  mapfile -t new_lines < "primer.ok"
+  good_array+=("\${new_lines[@]}")
+fi
+
+if [ -e "Instructions.ok" ]; then
+  mapfile -t new_lines < "Instructions.ok"
+  good_array+=("\${new_lines[@]}")
+fi
+
+if [[ ${params.nGuidesPerConcatamer} -eq 1 || ${params.nGuidesPerConcatamer} -eq 2 || ${params.nGuidesPerConcatamer} -eq 3 || ${params.nGuidesPerConcatamer} -eq 4 ]]; then
+    good_array+=("Number of Guides per Concatemer is valid")
+else
+    error_array+=("Number of Guides per Concatemer must be 1,2,3 or 4")
+fi
+
+if [ "\${#error_array[@]}" -gt 0 ]; then
+  echo "::group type=error::"
+  echo "<b> The following error were detected : </b>"
+  for t in "\${error_array[@]}"; do
+    echo "\$t"
+  done
+  echo "::endgroup::"
+  exit 1
+elif [ -e "Instructions.ok" ]; then
+  good_array+=(" Instructions were of the right format")
+fi
+
+echo "::group type=message::"
+for t in "\${good_array[@]}"; do
+  echo "\$t"
+done
+echo "::endgroup::"
+cp ${Instructions} Instructions_validated.txt
+    """
+}

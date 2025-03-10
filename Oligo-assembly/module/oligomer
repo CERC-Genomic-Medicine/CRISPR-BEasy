@@ -1,0 +1,63 @@
+
+process Oligomer_WEB {
+
+    input:
+    path(Instructions)
+    path(library)
+    path(Annotation)
+
+    output:
+    path("Concatemere.txt"), emit : Concatemere
+    path("Prepared_libary.csv"), emit : aux
+    path("overlap.txt"), optional : true
+
+publishDir "${params.Oligomer_repository}/", pattern: "Concatemere.txt", mode: "copy"
+publishDir "${params.Oligomer_repository}/", pattern: "Prepared_libary.csv", mode: "copy"
+publishDir "${params.Oligomer_repository}/", pattern: "overlap.txt", mode: "copy"
+    """
+
+if [ -e "Positive_control.csv" ] && [ -s "${Instructions}" ] ; then
+	Positive='-P Positive_control.csv --annotation_positive Positive_control_library_annotations.csv --positive_instructions ${Instructions}'
+else
+Positive=""
+fi
+
+if [ -e "Negative_control.csv" ]; then
+	Negative='-N Negative_control.csv --negative_number ${params.N_negative}'
+else
+Negative=""
+fi
+primers="${params.Primer_forward},${params.Primer_reverse}"
+ls -lh
+echo \${Negative}
+echo \${Positive}
+oligomer_web.py -L Target_library.csv \${Negative} \${Positive} --PRIMERS \${primers} --nGuidesPerConcatamer ${params.nGuidesPerConcatamer}
+
+
+log_array=()
+if [ -e Oligomer.log ]; then
+    mapfile -t new_lines < "Oligomer.log"
+    log_array+=("\${new_lines[@]}")
+fi
+
+if [ "\${#log_array[@]}" -gt 0 ]; then
+    echo "::group type=message::"
+    for t in "\${log_array[@]}"; do
+        echo "\$t"
+    done
+    echo "::endgroup::"
+fi
+
+error_array=()
+
+if [ "\${#error_array[@]}" -gt 0 ]; then
+    echo "::group type=error::"
+    echo "<b> The following errors were detected: </b>"
+    for t in "\${error_array[@]}"; do
+        echo "\$t"
+    done
+    echo "::endgroup::"
+    exit 2
+fi
+    """
+}

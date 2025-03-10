@@ -1,0 +1,126 @@
+id: nf-Oligomer
+name: nf-Oligomer
+version: 2b
+description: "A tool to build ready-to-order sgRNA libraries as oligonucleotides"
+author: Vincent Chapdelaine
+
+workflow:
+  steps:
+    - name: Oligomer
+      type: nextflow
+      script: main.nf
+      params:
+        project: "${CLOUDGENE_JOB_NAME}"
+
+      groups:
+        - id: "Validation"
+          label: "Validate inputs"
+        - id: "Oligomer_preparation"
+          label: "Oligomer preparation"
+
+      processes:
+        - process: "Validate_Target_library:Validate_Annotation"
+          view: label
+          label: "Validate Annotation of Target_library (optional)"
+          group: "Validation"
+        - process: "Validate_Negative_control_library:Validate_Annotation"
+          view: label
+          label: "Validate Annotation of Negative control library (optional)"
+          group: "Validation"
+        - process: "Validate_Positive_control_library:Validate_Annotation"
+          view: label
+          label: "Validate Annotation of Positive control library"
+          group: "Validation"
+        - process: "Validate_libraries"
+          view: label
+          label: "Validation of librarie(s)"
+          group: "Validation"
+        - process: "Validate_Instructions"
+          view: label
+          label: "Validation of Positive control library instructions"
+          group: "Validation"
+        - process: "Oligomer_WEB"
+          view: label
+          label: "Preparation of Oligomers"
+          group: "Oligomer_preparation"
+
+  inputs:
+    - id: Library_target
+      description: Library <br> (<a href="https://cerc-genomic-medicine.ca/example_library.xlsx" target="_blank">example</a>)
+      type: local_file
+      required: true
+      details: Excel file issued from CRISPR-BE.
+
+    - id: myseparator
+      type: separator
+
+    - id: Positive_label
+      description: Positive_Library (Optional)
+      type: label
+
+    - id: Library_positive
+      description: "Library Positive Controls (Optional)"
+      type: local_file
+      required: false
+      details: excel file issued from CRISPR-BE.
+
+    - id: Positive_library_instruction
+      description: Detailed Instructions <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/" target="_blank">Details</a>)
+      type: textarea
+      required: false
+      value: "FNLS 3 Stop_Gained\nABE8 10 Splice_Altering,Stop_Gained"
+      details: "Space-delimited table, columns : editor name (as writen in Excel file), number of guides, comma-delimited predicted consequence filter ('None','Stop_Gained', 'Splice_Altering', 'Start_Loss')* \n Splice_Altering clusters 'splice_donor_variant', and 'splice_acceptor_variant'\n None refering to no filter"
+
+    - id: myseparator_2
+      type: separator
+
+    - id: Negative_label
+      description: Negative Library (optional)
+      type: label
+
+    - id: Library_negative
+      description: Library Negative Controls (Optional)
+      type: local_file
+      required: false
+      details: excel file issued from CRISPR-BE.
+
+    - id: N_negative
+      description: Number of negative control guides
+      type: number
+      value: 10
+      required: false
+
+    - id: myseparator_3
+      type: separator
+
+    - id: Concatamer_Design_Options_label
+      description: Design Options
+      type: label
+
+    - id: nGuidesPerConcatamer
+      description: Number of gRNAs per oligomer
+      details: "1, 2, 3 or 4"
+      type: number
+      value: 4
+      required: true
+
+    - id: Primer_forward
+      description: Forward primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primers" target="_blank">help</a>)
+      type: text
+      details: Format 5->3'
+      value: 'GGGTCACGCGTAGGA'
+      required: true
+
+    - id: Primer_reverse
+      description: Reverse primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primers" target="_blank">help</a>)
+      type: text
+      details : Format 5->3'
+      value: 'GTTCCGCAGCCACAC'
+      required: true
+
+
+
+  outputs:
+    - id: Oligomer_repository
+      description: Oligomers
+      type: local_folder
