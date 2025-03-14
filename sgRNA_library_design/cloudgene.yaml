@@ -1,6 +1,7 @@
-id: CRISPR-BEdiscovered
-name: CRISPR-BEdiscovered
+id: sgRNA_library_design
+name: sgRNA_library_design
 version: 1.0a
+release: experimental
 description: "A Nextflow CRISPR library preparation pipeline."
 author: Vincent Chapdelaine
 
@@ -54,18 +55,6 @@ workflow:
         - process: "Crispr_Target_library_prep:OnTarget"
           view: label
           label: "Calculating on-target efficiency"
-          group: "Crispr_Target_library_prep"
-        - process: "Crispr_Positive_library_prep:OffTarget"
-          view: label
-          label: "Filtering Based on Off-Targets"
-          group: "Crispr_Positive_library_prep"
-        - process: "Crispr_Negative_library_prep:OffTarget"
-          view: label
-          label: "Filtering Based on Off-Targets"
-          group: "Crispr_Negative_library_prep"
-        - process: "Crispr_Target_library_prep:OffTarget"
-          view: label
-          label: "Filtering Based on Off-Targets"
           group: "Crispr_Target_library_prep"
         - process: "Crispr_Positive_library_prep:Basic_Annotation"
           view: label
@@ -135,17 +124,23 @@ workflow:
         hg38 : 'Homo sapien - hg38'
         mm39 : 'Mus musculus - mm39'
         GRCg7b : 'Gallus Gallus - bGalGal1.mat.broiler.GRCg7b'
-        ASM584v2 : 'E. coli - ASM584v2'
-        TAIR10 : 'A. Thaliana - TAIR10'
+        ASM584v2 : 'Escherichia coli - ASM584v2'
+        TAIR10 : 'Arabidopsis Thaliana - TAIR10'
+        WBCel235 : ' Caenorhabditis elegans - WBCel235'
+        R64_1_1 : 'Saccharomyces cerevisiae - R64'
+        BDGP_6 : 'Drosophila melanogaster - dm6'
+        GRCz11 : 'Danio Rerio - GRCz11'
+        ASM294v2 : 'Schizosaccharomyces pombe - ASM294v2'
 
-    - id : MANE
-      description : "Fetch regions based solely on MANE project's isoform"
+    - id : isoform
+      description : "Isoform to select"
       required : true
-      type: checkbox
-      value: false
-      values:
-        true: true
-        false: false
+      type : radio
+      value : None
+      values :
+        MANE: MANE (only available on certain genomes)
+        Canonical: Canonical
+        None: All isoform
 
     - id : border
       description : 'Flanking regions (bp) :'

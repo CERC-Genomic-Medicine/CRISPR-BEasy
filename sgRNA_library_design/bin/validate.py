@@ -41,7 +41,7 @@ argparser.add_argument('-B', '--Border', metavar='bp', dest='border', type=int, 
                        default=30, help='Border to be included around feature as define in feature options')
 argparser.add_argument('-F', '--Features', metavar='Annotation', dest='features', type=str,
                        required=False, nargs='*', default=['CDS'], help='Feature Types to be analysed (default exons)')
-argparser.add_argument('-M','--Mane_Select', dest = 'MANE_select_option', action='store_true', required = False, help = 'Only select transcript with the main isoform (as define by MANE Select project)')
+argparser.add_argument('-I','--isoform', dest = 'isoform', type=str, required = False, help = 'Which Isofrom filter shoudl be applied (None, Canonical MANE ')
 argparser.add_argument('--protist', dest = 'protist', action='store_true', required = False, help = 'Protist do not have transcript level because there is no alternate isoform')
 
 def validate_editor_file(file_path):
@@ -207,15 +207,23 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
             returned=pd.concat([returned,pd.DataFrame(df)], axis=0, ignore_index=True)
         else:
             PAM_occurences = []
-            if args.MANE_select_option:
-                print('::debug::MANE')
-                if args.protist:
+            if args.protist:
+                if args.isoform == 'MANE':
                     fetch_error = fetch_error + ['protist do not have MANE annotations']
+                PAM_occurences.extend(Feature_Annotation_protist(Feature,protein))
+                pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=['Chromosome', 'Start', 'End'])).merge()
+                df = pyranges.as_df()
+                df['protein'] = protein
+                returned=pd.concat([df,returned])
+            elif args.isoform == 'MANE':
+                if args.genome != 'hg38':
+                    fetch_error = fetch_error + ['Only hg38 assembly possess MANE annotations']
                     break
                 try : q=[f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0]) if 'tag' in f.attributes.keys() and 'MANE_Select' in f.attributes['tag']]
                 except gffutils.exceptions.FeatureNotFoundError :
                     try :
-                        q = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
+                        # Trying but not keeping
+                        g = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
                         continue
                     except gffutils.exceptions.FeatureNotFoundError :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
@@ -223,20 +231,25 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                     else :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a MANE isoform in database']
                         continue
-            else:
-                if args.protist:
-                    for Feature in args.features:
-                        PAM_occurences.extend(Feature_Annotation_protist(Feature,protein))
-                        pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=['Chromosome', 'Start', 'End'])).merge()
-                        df = pyranges.as_df()
-                        df['protein'] = protein
-                        returned=pd.concat([df,returned])
-                else:
-                    try : q = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
+            elif args.isoform == 'Canonical':
+                try : q=[f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0]) if 'tag' in f.attributes.keys() and 'Ensembl_canonical' in f.attributes['tag']]
+                except gffutils.exceptions.FeatureNotFoundError :
+                    try :
+                        #Trying not keeping
+                        g = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
+                        continue
                     except gffutils.exceptions.FeatureNotFoundError :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
                         continue
-            for Feature in args.features:
+                    else :
+                        fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a Canonical isoform in database']
+                        continue
+            else:
+                try : q = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
+                except gffutils.exceptions.FeatureNotFoundError :
+                    fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
+                    continue
+            if not args.protist:
                 for Feature in args.features:
                     PAM_occurences.extend(Feature_Annotation(Feature, q))
                     pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=[

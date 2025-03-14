@@ -23,7 +23,6 @@ argparser.add_argument('-C','--cas', metavar = 'str', dest = 'Cas', type = str, 
 
 argparser.add_argument('-O','--out', metavar = 'file', dest = 'Output', type = str, required = False,default='out', help = 'Ouput file name without extentions')
 
-
 cas_length_dict = {
     "SpCas9": 20,
     "SpCas9-NG": 20,
@@ -62,7 +61,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     CrisprVerse=pd.read_csv(args.Input,sep='\t')
     CrisprVerseAlign = pd.read_csv(args.align, sep='\t')
-    if len(CrisprVerse["ExtendedSqueuence"][0]) == 30 :
+    if len(CrisprVerse["spacer"][0]) == 20 and len(CrisprVerse["PAM"][0]) == 3 :
         if args.Cas != "SpCas9" :
             print('::notice:: RS3 scoring is based on spCAS9 (Hsu et al, 2013) and (Chen et al. 2013), since your cas has the same length it is Calculable and thus we provide it on an Experimental basis')
         context_seqs=CrisprVerse["ExtendedSqueuence"]
@@ -70,11 +69,15 @@ if __name__ == '__main__':
         Chen2013 = predict_seq(context_seqs, sequence_tracr='Chen2013')
         CrisprVerse["RS3_hsu2013"]=hsu2013
         CrisprVerse["RS3_Chen2013"]=Chen2013
-        CrisprVerse_Spacer_site = CrisprVerse['spacer'] +'_'+ CrisprVerse['pam_site'].astype(str)
-        CrisprVerseAlign_Spacer_site = CrisprVerseAlign['spacer'] +'_'+ CrisprVerseAlign['pam_site'].astype(str)
-        CrisprVerseAlign = CrisprVerseAlign.loc[~CrisprVerseAlign_Spacer_site.isin(CrisprVerse_Spacer_site)]
-        score_dict = CrisprVerseAlign.groupby('spacer')['CFD_score'].sum().to_dict()
-        CrisprVerse['sgRNA_CFD_score'] = [ 100.* 100.0 / score_dict[sp] for sp in CrisprVerse['spacer'] ]
+        if 'CFD_score' in CrisprVerseAlign.columns :
+#                CrisprVerse_Spacer_site = CrisprVerse['spacer'] +'_'+ CrisprVerse['pam_site'].astype(str)
+#                CrisprVerseAlign_Spacer_site = CrisprVerseAlign['spacer'] +'_'+ CrisprVerseAlign['pam_site'].astype(str)
+#                CrisprVerseAlign = CrisprVerseAlign.loc[~CrisprVerseAlign_Spacer_site.isin(CrisprVerse_Spacer_site)]
+                score_dict = CrisprVerseAlign.groupby('spacer')['CFD_score'].sum().to_dict()
+                CrisprVerse['sgRNA_CFD_score'] = [
+                "NA" if score_dict[sp] == 0 else 100.0 * 100.0 / score_dict[sp] 
+                for sp in CrisprVerse['spacer']
+                ]
     else :
         print(f'::notice::Off Target for {args.cas} is not currently calculable, in the future we endeavour to implement all Scores')
     CrisprVerse.to_csv(f'{args.Output}.scored.tsv',sep='\t',header=True,index=False)

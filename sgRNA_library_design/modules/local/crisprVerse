@@ -33,11 +33,26 @@ input:
         case "mRatBN7.2":
             bsgenome='BSgenome.Rnorvegicus.NCBI.mRat'
             break
+        case "WBCel235" :
+            bsgenome='BSgenome.Celegans.NA.WBCel235'
+            break
+        case "R64_1_1" :
+            bsgenome='BSgenome.Scerevisiae.NA.R64'
+            break
+        case "BDGP_6" :
+            bsgenome='BSgenome.Dmelanogaster.NA.BDGP6'
+            break
+        case "GRCz11":
+            bsgenome='BSgenome.Drerio.NA.GRCz11'
+            break
+        case "ASM294v3" :
+            bsgenome='BSgenome.Spombe.NA.ASM294v3'
+            break
         default:
             bsgenome = "Unknown"
 
-	}
-
+        }
+              
 // By default $params.CFD_Threshold and $params.CFD_Count can be null and the transfert to R is more Rocky
 def No_CFD = "F"
 def CFD_C = 0
@@ -417,7 +432,12 @@ Guides_df = df_G\$primary
 
 # Output
 write.table(aln_df, row.names = FALSE, quote=FALSE, sep='\t', file="${bedfile.getSimpleName()}_aln.txt")
-extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
+if ( ("${pamLength}"=="3") && ("${length}"=="20") ) {
+        extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
+} else {
+        extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
+}
+
 colnames(Guides_df)[4] = "Chromosome"
 colnames(Guides_df)[8] = "PAM"
 Guides_df['ExtendedSqueuence']=extSeqs
