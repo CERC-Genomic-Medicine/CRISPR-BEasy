@@ -11,6 +11,8 @@ process to_excel {
 
 publishDir "${params.Libraries}/", pattern: "*.xlsx", mode: "copy"
       """
-      to_excel.py --vep ${vep} --csv ${Base_annotation} --out ${output}
+source ${params.Python_env}
+
+to_excel.py --vep ${vep} --csv ${Base_annotation} --out ${output}
       """
 }

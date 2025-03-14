@@ -201,12 +201,20 @@ switch (params.casName) {
         pamLength = 0
 }
 
+def Protist
+
+if ("$params.genome" in ['R64_1_1', 'ASM294v3', 'ASM584v2']) {
+    Protist = "TRUE"
+} else {
+    Protist = "FALSE"
+}
+
     """
     #!/usr/bin/env bash
     source ${params.Python_env}
     error_array=()
     good_array=()
-    if [ "${params.genome}" == "ASM584v2" ]; then
+    if [ "${Protist}" == "TRUE" ]; then
 	protist_flag='--protist'
 else 
 protist_flag=''
@@ -216,12 +224,14 @@ fi
     good_array+=("<LI> Parameter Flanking Region : ${params.border} bp (bases to consider on each side of the selected gene feature)")
     good_array+=("<LI> Parameter Cas9 Orthologue : ${params.casName}")
     good_array+=("<LI> Parameter Gene Feature : ${params.feature} (feature to be investigated)")
-    if [ "${params.MANE}" == "true" ]; then
-      Mane_flag='-M'
-      good_array+=("<LI> Parameter MANE : true (Isoform analysed will correspond to the MANE project)")
-    else
-      Mane_flag=''
-      good_array+=("<LI> Parameter MANE : false (All isoforms will be considered.)")
+    if [ "${params.isoform}" == "MANE" ]; then
+      good_array+=("<LI> Parameter isoform : MANE (Isoform analysed will correspond to the MANE project)")
+    elif [ "${params.isoform}" == "None" ]; then
+      good_array+=("<LI> Parameter isform : None (All isoforms will be considered.)")
+    elif [ "${params.isoform}" == "Canonical" ]; then
+      good_array+=("<LI> Parameter isform : Canonical (canonical isoforms will be considered.)")
+    else 
+      error_array+=("<LI> Isofrom specification is invalid (accepted : None, canonical, MANE)")
     fi
     good_array+=("<LI> Parameter GC : ${params.GC} (C within GC pattern will not be mutated in mutation prediction if specified)")
 
@@ -247,7 +257,7 @@ fi
    else
         encode=''
    fi
-    validate.py -T ${targets} -N ${negative} -P ${positive} \$Mane_flag -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/CRISPOR_genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} \${protist_flag}
+    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} \${protist_flag}
    
    if [ -e errors.err ]; then
     mapfile -t new_lines < "errors.err"
