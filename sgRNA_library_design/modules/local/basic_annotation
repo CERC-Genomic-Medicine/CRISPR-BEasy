@@ -9,8 +9,6 @@ process Basic_Annotation {
     path("*_empties.txt"), emit : empties 
     path("*.per_guides.vcf.gz") , emit : VCF
     
-    publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations", pattern: "*.csv", mode: "copy"
-    publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.per_guides.vcf.gz", mode: "copy"
 
 script:
 
@@ -24,9 +22,9 @@ switch (params.casName) {
         pamLength = 3
         break
     case "SpCas9-NG":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpCas9-NRRH":
         pam = "NRRH"
@@ -49,14 +47,14 @@ switch (params.casName) {
         pamLength = 3
         break
     case "xCas9":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpG":
-        pam = "NG"
+        pam = "NGG"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpRY":
         pam = "NNN"
@@ -186,7 +184,7 @@ awk '{print "##contig=<ID="\$1",length="\$2">"}' ${params.Gen_pipeline_data}/gen
     else
      GC_flag=''
     fi
-    basic_annotation.py  --Editor ${editors} -B ${bed} -S ${score} -L ${pamLength} -R  \${GC_flag} -n ${score.getSimpleName().split('_')[0]} -O ${score.getSimpleName()} --head header_contigs.txt
+    basic_annotation.py  --Editor ${editors} -B ${bed} -S ${score} -L ${pamLength} -R  \${GC_flag} -n ${score.getSimpleName().split('_')[1]} -O ${score.getSimpleName()} --head header_contigs.txt
         for vcf in *.vcf ;
         do
                 bcftools view \$vcf -Oz -o "\$vcf".gz
@@ -194,5 +192,4 @@ awk '{print "##contig=<ID="\$1",length="\$2">"}' ${params.Gen_pipeline_data}/gen
     """
 
 }
-
 

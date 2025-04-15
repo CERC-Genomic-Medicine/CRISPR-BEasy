@@ -12,11 +12,9 @@ process annotate {
 	
 	output:
 	path("${vcf.getSimpleName()}.vep.tsv"), emit: Annotations
-        path("protein.list"), emit: An
         path("*.sorted.vcf.gz"), emit: test
 
         publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.vep.tsv", mode: "copy"
-	publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "protein.list", mode: "copy"
         publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.sorted.vcf.gz", mode: "copy"
         
         script:
@@ -77,7 +75,7 @@ process annotate {
     }
 	if (params.genome == "hg38")
 		"""
-	editor="${vcf.simpleName.tokenize('_')[3]}"
+	editor="${vcf.simpleName.tokenize('_')[4]}"
 	awk '{if (\$4 ~ /^custom/) {print > "custom_regions.bed"} else {print \$4 > "protein.list"}}' ${bed}
 	export PERL5LIB=/opt/vep/.vep/Plugins/:\${PERL5LIB:-}
 	bcftools sort ${vcf} -Oz -o ${vcf.getSimpleName()}.sorted.vcf.gz
@@ -99,7 +97,7 @@ process annotate {
 
 	else
 		"""
-		        editor="${vcf.simpleName.tokenize('_')[3]}"
+		        editor="${vcf.simpleName.tokenize('_')[4]}"
         awk '{if (\$4 ~ /^custom/) {print > "custom_regions.bed"} else {print \$4 > "protein.list"}}' ${bed}
         export PERL5LIB=/opt/vep/.vep/Plugins/:\${PERL5LIB:-}
         bcftools sort ${vcf} -Oz -o ${vcf.getSimpleName()}.sorted.vcf.gz

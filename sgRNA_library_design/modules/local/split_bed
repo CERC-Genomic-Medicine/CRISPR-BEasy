@@ -1,0 +1,13 @@
+process split_bed {
+    input:
+    path bed_file
+
+    output:
+    path "chunk*.bed", emit : bed_chunks
+
+
+    script:
+    """
+    split_bed.py ${bed_file} ${params.soft_bp_limit} --overlap 30
+    """
+}

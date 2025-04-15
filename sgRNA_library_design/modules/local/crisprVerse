@@ -7,7 +7,11 @@ input:
     output:
     path("${bedfile.getSimpleName()}.txt"), emit : crispr_base
     path("${bedfile.getSimpleName()}_aln.txt"), emit : aln
+    path("${bedfile.getSimpleName()}_failed.txt"), emit : failed , optional: true
+    path("${bedfile.getSimpleName()}_failed_aln.txt"), emit : failed_aln , optional: true
 
+
+// publishDir "${params.Auxiliary_files}/Crispr/", pattern: "*_aln.txt", mode: "copy"
         script:
 // Defined genomes with bsgenome name with format
         def bsgenome
@@ -45,8 +49,8 @@ input:
         case "GRCz11":
             bsgenome='BSgenome.Drerio.NA.GRCz11'
             break
-        case "ASM294v3" :
-            bsgenome='BSgenome.Spombe.NA.ASM294v3'
+        case "ASM294v2" :
+            bsgenome='BSgenome.Spombe.NA.ASM294v2'
             break
         default:
             bsgenome = "Unknown"
@@ -75,9 +79,9 @@ def pamLength
         pamLength = 3
         break
     case "SpCas9-NG":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpCas9-NRRH":
         pam = "NRRH"
@@ -100,14 +104,14 @@ def pamLength
         pamLength = 3
         break
     case "xCas9":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpG":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpRY":
         pam = "NNN"
@@ -386,14 +390,14 @@ guideSet <- addSpacerAlignments(guideSet,
 
 aln_df=mcols(alignments(guideSet))
 
-if ( "${No_CFD}" != "T" ){
+print(head(aln_df))
+if ( "${length}"=="20" ){
 if ("${params.casName}" == "SpCas9") {
      scores_cfd <- crisprScore::getCFDScores(spacers=as.character(aln_df\$spacer),
                                                protospacers=as.character(aln_df\$protospacer),
                                                pams=as.character(aln_df\$pam))
      scores_cfd=scores_cfd\$score
 } else {
-     cat('::notice:: CFD scoring is normally based on spCAS9 (Doench et al. 2016), currently the only adjustment is to the protospacer adjacent motif mismatch penalty matrix. \n The modification makes any acceptable (i.e. fulfilling the motif) PAM 100% and any non-acceptable 0%. \n')
      load(paste0("${params.CFD_files}", '/sysdata.rda'))
      source(paste0("${params.CFD_files}", "/CFD_alt.R"))   
         MM_score <- cfd.mm.weights.cas9
@@ -406,6 +410,7 @@ if ("${params.casName}" == "SpCas9") {
           MM_score
         )
 }
+if ( "${No_CFD}" != "T" ){
 #Convert to dataframe easier to work with
 guideDF = GuideSet2DataFrames(guideSet)
 guideDF = guideDF\$primary
@@ -414,17 +419,30 @@ guideDF = guideDF\$primary
 aln_df['CFD_score'] = as.numeric(scores_cfd)
 #Filter Threshold
 aln_df_filt = aln_df[unlist(aln_df\$CFD_score) >= ${CFD_T},]
-#Filter Count
 count_pass = table(row.names(aln_df_filt)) <= ${CFD_C} + 1 ## self align
 pass_names = rownames(count_pass[count_pass])
 filtered_guideSet = guideSet[pass_names,]
+fail_names = names(count_pass[!count_pass])
+# Filter guideSet to only those that passed
+filtered_guideSet = guideSet[pass_names,]
+fail_guideSet = guideSet[fail_names,]
+df_F = GuideSet2DataFrames(fail_guideSet)
+Fail_Guides_df = df_F\$primary
+write.table(Fail_Guides_df, row.names = FALSE, quote=FALSE, sep='\t', file="${bedfile.getSimpleName()}_failed.txt")
 #CDF_Calc for sgRNA
 aln_df <- as.data.frame(aln_df)
 aln_df['CFD_score'] <- aln_df['CFD_score']*100
 df_G = GuideSet2DataFrames(filtered_guideSet)
 Guides_df = df_G\$primary
 } else {
-# IF not CFD calc
+head(aln_df)
+aln_df['CFD_score'] = as.numeric(scores_cfd)
+filtered_guideSet = guideSet
+df_G = GuideSet2DataFrames(filtered_guideSet)
+Guides_df = df_G\$primary
+}
+} else {
+# IF not CFD calc possible
 filtered_guideSet = guideSet
 df_G = GuideSet2DataFrames(filtered_guideSet)
 Guides_df = df_G\$primary
@@ -438,6 +456,7 @@ if ( ("${pamLength}"=="3") && ("${length}"=="20") ) {
         extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
 }
 
+Guides_df['ContextSequence'] = getExtendedSequences(filtered_guideSet,-31,7)
 colnames(Guides_df)[4] = "Chromosome"
 colnames(Guides_df)[8] = "PAM"
 Guides_df['ExtendedSqueuence']=extSeqs

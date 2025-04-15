@@ -46,43 +46,19 @@ argparser.add_argument('--negative_number', metavar='name',
 
 ### General
 
-argparser.add_argument('--nGuidesPerConcatamer', metavar='int', dest='nGperC', type=int,
-                       required=True, help='Number of Guides per Concatamer')
-
-argparser.add_argument('--BSMBI', metavar='str', dest='BSMBI',
+argparser.add_argument('--First_enzyme', metavar='str', dest='First_enzyme',
                        type=str, required=False, default='CGTCTC', help='Restriction Site')
+argparser.add_argument('--Second_enzyme', metavar='str', dest='Sec_enzyme',
+                       type=str, required=False, default='GAATTC', help='Restriction Site')
+argparser.add_argument('--Scaffold', metavar='str', dest='Scaffold',
+                       type=str, required=False, default='GTTTAAGAGCTATGCTGGAAACAGCATAGCAAGTTTAAATAAGGCTAGTCCGTTATCAACTTGAAAAAGTGGCACCGAGTCGGTGCTTTTTTT', help='Scaffold')
 argparser.add_argument('--PRIMERS', metavar=str, dest='Primers', type=str,
                        required=True, help='Primer forward,reverse')
-argparser.add_argument('-F', '--fragments', metavar='Annotation', dest='fragments', type=str, required=False, nargs='*', default=[
-                       'CGTCTCACACCG', 'GTTTTGAGACGgactgcCGTCTCcCACCG', 'GTTTaGAGACGggactaCGTCTCgCACCG', 'GTTTcGAGACGcttctcCGTCTCtCACCG', 'GTTTgGAGACG'], help='')
 
-def Assert_Fragments_BSMBI(BSMBI, fragments):
-    #makes sure fragments meet restriction requierement
-    flags = ''
-    BSMBI_reverse = str(Seq(BSMBI).reverse_complement())
-    if fragments[0][0:len(BSMBI)] != BSMBI:
-        flags = flags + \
-            'Fragment 1 doesn\'t contain restriction site (BSMBI) at its beginning \n'
-    if len(fragments)>2 :
-        for i in range(1, len(fragments)-1):
-            if fragments[i].find(BSMBI) == -1:
-                flags = flags + 'Fragment  ' + \
-                    str(i+1) + ' doesn\'t contain forward restriction site (BSMBI) \n'
-            if fragments[i].find(BSMBI_reverse) == -1:
-                flags = flags + 'Fragment  ' + \
-                    str(i+1) + ' doesn\'t contain reverse restriction site (BSMBI) \n'
-    last = fragments[len(fragments)-1]
-    if last.find(BSMBI_reverse) != (len(last)-len(BSMBI)):
-        flags = flags + \
-            'Last fragment doesn\'t contain restriction site (BSMBI) at its end \n'
-    return flags
-
-def filter_restriction_sgrna (df, library_type) :
-    #test if guides induce additional restriction sites
-    test_restriction_sgrna=args.fragments[0] + df.Protospacer +args.fragments[1]
-    test_answer=[((i.count(args.BSMBI) +  i.count(BSMBI_reverse))==3) for i in test_restriction_sgrna]
-    removed=len(test_restriction_sgrna)-sum(test_answer)
-    return df.iloc[test_answer], removed
+def create_oligomer(row, First_enzyme, Sec_enzyme, Scaffold, Primer_for, Primer_rev):
+    oligo = Primer_for + First_enzyme + 'G' + row['Protospacer'] + row['PAM'] + Scaffold + Sec_enzyme + Primer_rev
+    #oligo = Primer_for + row['Protospace'] + Scaffold + row['ContextSequence'] + Primer_rev
+    return oligo
 
 def deduplicate_dataframes(dataframes: list, column_name: str, second_column_name: str):
     """
@@ -92,7 +68,7 @@ def deduplicate_dataframes(dataframes: list, column_name: str, second_column_nam
     Parameters:
         dataframes (list): List of pandas DataFrames to process.
         column_name (str): Column name to check for duplicates across dataframes.
-        second_column_name (str): Column name whose values will be grouped by duplicates.
+        Second_column_name (str): Column name whose values will be grouped by duplicates.
 
     Returns:
         tuple: (*dataframes, dictionary of {duplicate: [second_column_values]}).
@@ -101,26 +77,26 @@ def deduplicate_dataframes(dataframes: list, column_name: str, second_column_nam
     duplicate_dict = defaultdict(list)
 
     # Precompute Positive_protospace for all dataframes
-    for df in dataframes:
-        df['Positive_protospace'] = df[column_name]
-        df.loc[df['strand'] == '-', 'Positive_protospace'] = df.loc[df['strand'] == '-', column_name].map(
-            lambda x: str(Seq(x).reverse_complement())
-        )
+    #for df in dataframes:
+    #    df['Positive_protospace'] = df[column_name]
+    #    df.loc[df['strand'] == '-', 'Positive_protospace'] = df.loc[df['strand'] == '-', column_name].map(
+    #        lambda x: str(Seq(x).reverse_complement())
+    #    )
 
     # Combine all dataframes into a single dataframe to identify global duplicates
     combined_df = pd.concat(dataframes, ignore_index=True)
 
     # Identify duplicate sequences using duplicated()
-    duplicates = set(combined_df.loc[combined_df.duplicated(subset=['Positive_protospace'], keep=False), 'Positive_protospace'])
+    duplicates = set(combined_df.loc[combined_df.duplicated(subset=[column_name], keep=False), column_name])
 
     # Collect the second column values for duplicates efficiently
-    duplicate_dict = combined_df[combined_df['Positive_protospace'].isin(duplicates)]\
-        .groupby('Positive_protospace')[second_column_name]\
+    duplicate_dict = combined_df[combined_df[column_name].isin(duplicates)]\
+        .groupby(column_name)[second_column_name]\
         .apply(lambda x: ', '.join(map(str, x)))\
         .to_dict()
 
     # Deduplicate each dataframe by removing rows with duplicates in Positive_protospace
-    deduplicated_dataframes = [df[~df['Positive_protospace'].isin(duplicates)].reset_index(drop=True) for df in dataframes]
+    deduplicated_dataframes = [df[~df[column_name].isin(duplicates)].reset_index(drop=True) for df in dataframes]
 
     return (*deduplicated_dataframes, duplicate_dict)
 
@@ -172,34 +148,32 @@ if __name__ == '__main__':
     error_list=[]
     log=[]
     args = argparser.parse_args()
-    if len(args.fragments) < (args.nGperC + 1):
-        raise Exception("The number of Guides per concatament is more than what is possible with the fragments given")
-    frags = args.fragments[0:(args.nGperC)]
-    frags.append(args.fragments[-1])
-    flags = Assert_Fragments_BSMBI(args.BSMBI, frags) # test BSMBI and fragment are appropriate (fragments contains BSMBI)
-    if flags:
-        raise Exception(flags)
-    BSMBI_reverse = str(Seq(args.BSMBI).reverse_complement())
+    Target = pd.read_csv(args.Target)
     primers_reverse = str(Seq(args.Primers.split(',')[1]).reverse_complement())
     primers_forward = args.Primers.split(',')[0]
-    Library_list = []
-    Target = pd.read_csv(args.Target)
-    Target, removed=filter_restriction_sgrna(Target, "target library")
+    Target["Oligo"] = Target.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
+    Target=Target[Target['Oligo'].str.count(args.First_enzyme) == 1]
+    Target=Target[Target['Oligo'].str.count(args.Sec_enzyme) == 1]
     Target['editor']='NA'
+    Library_list = []
     if args.Positive: 
         Positive = pd.read_csv(args.Positive)
-        Positive, removed_positive = filter_restriction_sgrna(Positive, "positive control library")
+        Positive["Oligo"] = Positive.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
+        Positive=Positive[Target['Oligo'].str.count(args.First_enzyme) == 1]
+        Positive=Positive[Target['Oligo'].str.count(args.Sec_enzyme) == 1]
         instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'])
         Positive_length= sum([int(i) for i in instructions['N']])
     else :
-        Positive = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand'])
+        Positive = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
         Positive_length=0
     if args.Negative:     
         Negative = pd.read_csv(args.Negative)
-        Negative, removed_negative = filter_restriction_sgrna(Negative, "negative control library")
+        Negative["Oligo"] = Negative.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
+        Negative=Negative[Target['Oligo'].str.count(args.First_enzyme) == 1]
+        Negative=Negative[Target['Oligo'].str.count(args.Sec_enzyme) == 1]
         N=len(Negative.ID) if args.negative_number == 0 else args.negative_number
     else :  
-        Negative = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand'])
+        Negative = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
         N=0
     if args.target_VEP:
         t_VEP = pd.read_csv(args.target_VEP)
@@ -220,32 +194,18 @@ if __name__ == '__main__':
     Negative.index=Negative.ID
     N=len(Negative.ID) if args.negative_number == 0 else args.negative_number
     Length_libraries = len(Target['ID']) + N + Positive_length
-    SguidePerConcat = len(frags)-1
-    remainder = SguidePerConcat-(Length_libraries % SguidePerConcat)
-    remainder = remainder if remainder != SguidePerConcat else 0
-
     log.append("<b> Overall statistics </b>")
-    log.append("Fagments : " + ",".join(frags))
     log.append(f"Primers (forw,reverse) : {args.Primers}")
-    log.append(f"{len(frags)-1} sgRNA per oligomer")
     log.append(f"{Length_libraries} sgRNA requested in total")
-    log.append(f"{len(Target['ID'])} guides in target library. {removed} removed du to restriction sites.")
     if protospacer_overlap :
-        log.append(f"{str(sum(len(values) for values in protospacer_overlap.values()))} guides were discarded due to their duplicate protospacers with other guides to be tested (including Reverse Complement)")
+        log.append(f"{str(sum(len(values) for values in protospacer_overlap.values()))} guides were discarded due to their duplicate protospacers with other guides")
     if args.negative_number>=0 and not Negative.empty :
         log.append(f"  {len(Negative['ID'])} guides in negative library. {removed_negative} removed du to restriction sites")
         log.append(f"\t{N} requested in from negative control library")
         if N > len(Negative.ID) :
             error_list.append(f'Too many guides were asked in negative controls library')
-        elif (remainder + N) <= len(Negative['ID']) :
-            if remainder !=0 and not error_list :
-                log.append(f"{remainder} Negative library guides were added to complete the concatemer")
-            Library_list.append(Negative.sample(N + remainder,random_state=11,axis=0))
-            remainder=0
-        elif (remainder + N ) > len(Negative['ID']) and not error_list :
-            log.append(f"{(SguidePerConcat - remainder)} Negative library guides were removed due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")
-            Library_list.append(Negative.sample(args.negative_number -(SguidePerConcat - remainder),random_state=11,axis=0))
-            remainder=0
+        elif N <= len(Negative['ID']) :
+            Library_list.append(Negative.sample(N,random_state=11,axis=0))
         else :
             error_list.append(f" Negative library was too short to overcome the burden of completing concatamer \n Means there would be no Negative controls")
     if  not (Positive.empty  or  p_VEP.empty) :
@@ -256,30 +216,8 @@ if __name__ == '__main__':
             error_list.extend(errors)
         else :
             Used=pd.concat(Library_list_Positive, ignore_index=False)
-            if remainder == 0:
-                Library_list.append(Used)
-            elif len(Unused['ID'])> remainder:
-                Library_list.append(Unused.sample(remainder),random_state=11,axis=0)
-                Library_list.append(Used)
-                if not error_list:
-                    log.append(f"{(remainder)} Positive library guides were added at random (amongs specified editors/consqueneces) due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")
-                remainder=0
-            elif len(Used['ID']) > (SguidePerConcat - remainder) :
-                Used=Used.sample( len(Used['ID'])- (SguidePerConcat - remainder),random_state=11,axis=0)
-                Library_list.append(Used)
-                remainder=0
-                if not error_list :
-                    log.append(f"{(SguidePerConcat - remainder)} Positive library guides were removed at random due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")
-            else :
-                error_list.append(f" Positive control libraries was too short to overcome the burden of completing concatamer \n Means there would be no positive controls")
-    if remainder != 0 and not error_list:
-        Target=Target.sample(len(Target['ID'])- (SguidePerConcat - remainder),random_state=11,axis=0)
-        Library_list.append(Target)
-        log.append(f"{(SguidePerConcat - remainder)} Target library guides were removed at random due to incomplete concatemer \n Normally we would focus on control library guides but not enough were provided")
-    elif remainder >= len(Target['ID']):
-        error_list.append(f"Library was too short to overcome the burden of completing concatamer \n Means there would be no guides")
-    else :
-        Library_list.append(Target)
+            Library_list.append(Used)
+    Library_list.append(Target)
     log.append(f" {Length_libraries} sgRNA requested in total")
     if error_list :
         with open("Oligomer_errors.err", "w") as file:
@@ -289,17 +227,8 @@ if __name__ == '__main__':
         guides = pd.concat(Library_list, ignore_index=False)
         guides = guides.sample(frac=1,random_state=11)
         with open('Concatemere.txt', 'w') as out:
-            for i in range(0, len(guides.index), SguidePerConcat):
-                GuidesNames = []
-                concat = [primers_forward]
-                for j in range(0, SguidePerConcat):
-                    concat.extend([frags[j], guides.iloc[i+j].Protospacer])
-                    GuidesNames.append(guides.iloc[i+j].ID)
-                Names = ','.join(GuidesNames)
-                concat.extend([frags[SguidePerConcat],primers_reverse])
-                concatemere = ''.join(concat)
-                out.write('\t'.join([concatemere, Names]) + ' \n')
-        log.append(f"  {len(guides.ID) / SguidePerConcat} Oligomers produced.")
+            for index, row in guides.iterrows():
+                out.write('\t'.join([row['Oligo'], row['ID']]) + ' \n')
         guides.to_csv('Prepared_libary.csv')
     with open("Oligomer.log", "w") as file:
             for item in log:

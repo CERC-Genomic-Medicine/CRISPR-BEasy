@@ -1,0 +1,16 @@
+process combine_general {
+    input:
+    path csvs
+    val(name)
+
+    output:
+    path "${name}.csv", emit : csv
+    path "${name}_id_dic.tsv", emit: ID_dic
+
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations", pattern: "${name}.csv", mode: "copy"
+    script:
+    """
+    source ${params.Python_env}
+    combine_csv_.py --csv *.csv --output ${name}
+    """
+}

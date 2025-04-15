@@ -1,6 +1,6 @@
 id: nf-Oligomer
-name: nf-Oligomer
-version: 2b
+name: 'Step II: Oligo Assembly'
+version: 3
 description: "A tool to build ready-to-order sgRNA libraries as oligonucleotides"
 author: Vincent Chapdelaine
 
@@ -49,7 +49,7 @@ workflow:
       description: Library <br> (<a href="https://cerc-genomic-medicine.ca/example_library.xlsx" target="_blank">example</a>)
       type: local_file
       required: true
-      details: Excel file issued from CRISPR-BE.
+      details: Excel file issued from sgRNA library design
 
     - id: myseparator
       type: separator
@@ -62,7 +62,7 @@ workflow:
       description: "Library Positive Controls (Optional)"
       type: local_file
       required: false
-      details: excel file issued from CRISPR-BE.
+      details: Excel file issued from sgRNA library design
 
     - id: Positive_library_instruction
       description: Detailed Instructions <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/" target="_blank">Details</a>)
@@ -82,7 +82,7 @@ workflow:
       description: Library Negative Controls (Optional)
       type: local_file
       required: false
-      details: excel file issued from CRISPR-BE.
+      details: Excel file issued from sgRNA library design
 
     - id: N_negative
       description: Number of negative control guides
@@ -97,28 +97,39 @@ workflow:
       description: Design Options
       type: label
 
-    - id: nGuidesPerConcatamer
-      description: Number of gRNAs per oligomer
-      details: "1, 2, 3 or 4"
-      type: number
-      value: 4
-      required: true
-
     - id: Primer_forward
-      description: Forward primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primers" target="_blank">help</a>)
+      description: Forward primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primer-selection-for-traditionnal-base-editing-screen" target="_blank">help</a>)
       type: text
       details: Format 5->3'
       value: 'GGGTCACGCGTAGGA'
       required: true
 
     - id: Primer_reverse
-      description: Reverse primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primers" target="_blank">help</a>)
+      description: Reverse primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primer-selection-for-traditionnal-base-editing-screen" target="_blank">help</a>)
       type: text
       details : Format 5->3'
       value: 'GTTCCGCAGCCACAC'
       required: true
 
+    - id: Assembly_label
+      description: Assembly options
+      type: label
 
+    - id : sensor
+      description : "Assembly Type :"
+      required : true
+      type: radio
+      value: false
+      values:
+        false : 'Oligos Assembly for "traditional" base editing screens'
+        true : 'Oligos Assembly for sensor-based base editing screens (as Sanchez-Rivera et al, Nat Biotech, 2022)'
+
+    - id: nGuidesPerConcatamer
+      description: "Number of gRNAs per oligomer"
+      type: number
+      value: 4
+      required: true
+      details: '1-4, only applicable for oligos for "traditional" base editing screens'
 
   outputs:
     - id: Oligomer_repository

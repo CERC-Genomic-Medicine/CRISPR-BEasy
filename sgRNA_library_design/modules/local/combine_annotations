@@ -1,0 +1,17 @@
+process combine_annotations {
+    input:
+        tuple val(editor), path(veps)
+        val(name)
+        path(ids)
+
+    output:
+        path "${name}_${editor}.tsv", emit: tsv
+
+    publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "${name}_${editor}.tsv", mode: "copy"
+
+    script:
+    """
+source ${params.Python_env}
+vep_combiner.py --vep ${veps} --ids ${ids} --out ${name}_${editor}.tsv
+    """
+}
