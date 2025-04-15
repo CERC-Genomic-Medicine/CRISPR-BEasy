@@ -1,0 +1,23 @@
+process combine_vcfs {
+    input:
+    tuple val(editor), path(vcfs)
+    val(name)
+    path(dic)
+
+    output:
+    path "${name}_${editor}.vcf.gz", emit : vcf
+
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "${name}_${editor}.vcf.gz", mode: "copy"
+    script:
+    """
+source ${params.Python_env}
+for vcf in *.vcf.gz ; do 
+    f="\$(basename -- \$vcf)"
+    bcftools sort \${vcf} -Oz -o \${f}.sorted_1.vcf.gz
+    bcftools index \${f}.sorted_1.vcf.gz
+    done
+
+    bcftools concat --remove-duplicates -a -Oz -o temp.vcf.gz *.sorted_1.vcf.gz
+    reID_vcf.py --vcf temp.vcf.gz --output ${name}_${editor}.vcf.gz --dict ${dic}
+    """
+}

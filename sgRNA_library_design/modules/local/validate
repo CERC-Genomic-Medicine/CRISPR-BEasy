@@ -31,7 +31,7 @@ else {
          CFD_threshold = "T"
      }
 // Check if params.CFD_Count is not an integer between [1-10]
-    if (!(params.CFD_Count instanceof Integer) || params.CFD_Count < 1 || params.CFD_Count > 10) {
+    if (!(params.CFD_Count instanceof Integer) || params.CFD_Count < 0 || params.CFD_Count > 10) {
           CFD_count = "T"
     }
 }
@@ -46,9 +46,9 @@ switch (params.casName) {
         pamLength = 3
         break
     case "SpCas9-NG":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpCas9-NRRH":
         pam = "NRRH"
@@ -71,14 +71,14 @@ switch (params.casName) {
         pamLength = 3
         break
     case "xCas9":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpG":
-        pam = "NG"
+        pam = "NGN"
         length = 20
-        pamLength = 2
+        pamLength = 3
         break
     case "SpRY":
         pam = "NNN"
@@ -251,13 +251,12 @@ else
   good_array+=("<LI> CFD can not be calculated (length is not equal to spCas9)")
 fi
 
-
    if [ -e ${params.Gen_pipeline_data}/genomes/${params.genome}_encode.bed ]; then
 	encode='-e ${params.Gen_pipeline_data}/genomes/${params.genome}_encode.bed'
    else
         encode=''
    fi
-    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} \${protist_flag}
+    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} \${protist_flag} -L ${params.limit_bp}
    
    if [ -e errors.err ]; then
     mapfile -t new_lines < "errors.err"

@@ -63,22 +63,26 @@ if __name__ == '__main__':
     CrisprVerseAlign = pd.read_csv(args.align, sep='\t')
     if len(CrisprVerse["spacer"][0]) == 20 and len(CrisprVerse["PAM"][0]) == 3 :
         if args.Cas != "SpCas9" :
-            print('::notice:: RS3 scoring is based on spCAS9 (Hsu et al, 2013) and (Chen et al. 2013), since your cas has the same length it is Calculable and thus we provide it on an Experimental basis')
+            print('::notice:: Rule set 3 (Hsu et al ; Chen et al. 2013) was developed for SpCas9. We enable scoring for all SpCas9 variants on an experimental basis')
         context_seqs=CrisprVerse["ExtendedSqueuence"]
         hsu2013 = predict_seq(context_seqs, sequence_tracr='Hsu2013')
         Chen2013 = predict_seq(context_seqs, sequence_tracr='Chen2013')
         CrisprVerse["RS3_hsu2013"]=hsu2013
         CrisprVerse["RS3_Chen2013"]=Chen2013
-        if 'CFD_score' in CrisprVerseAlign.columns :
+    else :
+        print(f'::notice:: Rule set 3 (Hsu et al ; Chen et al. 2013)  is not currently calculated for {args.Cas}  since it is too different from SpCas9 (the experimental basis for CFD scoring). We enable scoring for all SpCas9 variants on an experimental basis')
+    if len(CrisprVerse["spacer"][0]) == 20 and 'CFD_score' in CrisprVerseAlign.columns :
 #                CrisprVerse_Spacer_site = CrisprVerse['spacer'] +'_'+ CrisprVerse['pam_site'].astype(str)
 #                CrisprVerseAlign_Spacer_site = CrisprVerseAlign['spacer'] +'_'+ CrisprVerseAlign['pam_site'].astype(str)
 #                CrisprVerseAlign = CrisprVerseAlign.loc[~CrisprVerseAlign_Spacer_site.isin(CrisprVerse_Spacer_site)]
-                score_dict = CrisprVerseAlign.groupby('spacer')['CFD_score'].sum().to_dict()
-                CrisprVerse['sgRNA_CFD_score'] = [
+        score_dict = CrisprVerseAlign.groupby('spacer')['CFD_score'].sum().to_dict()
+        CrisprVerse['sgRNA_CFD_score'] = [
                 "NA" if score_dict[sp] == 0 else 100.0 * 100.0 / score_dict[sp] 
                 for sp in CrisprVerse['spacer']
                 ]
+        if args.Cas != "SpCas9" :
+            print('::notice:: CFD scoring was developed for SpCas9 (Doench et al., Nat Biotechnol, 2016). We enable scoring for all SpCas9 variants by adjusting the PAM mismatch penalty matrix.')
     else :
-        print(f'::notice::Off Target for {args.cas} is not currently calculable, in the future we endeavour to implement all Scores')
+        print(f'::notice:: CFD Off-Target is not currently calculated for {args.Cas} since it is too different from SpCas9 (the experimental basis for CFD scoring). We enable scoring for all SpCas9 variants by adjusting the PAM mismatch penalty matrix.')
     CrisprVerse.to_csv(f'{args.Output}.scored.tsv',sep='\t',header=True,index=False)
     CrisprVerseAlign.to_csv(f'{args.Output}_alignements.tsv',sep='\t',header=True,index=False)

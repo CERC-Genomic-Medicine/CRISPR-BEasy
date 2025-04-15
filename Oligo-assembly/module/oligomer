@@ -31,7 +31,11 @@ primers="${params.Primer_forward},${params.Primer_reverse}"
 ls -lh
 echo \${Negative}
 echo \${Positive}
+if [ "${params.sensor}" == "true" ]; then
+sensor_web.py -L Target_library.csv \${Negative} \${Positive} --PRIMERS \${primers}
+else
 oligomer_web.py -L Target_library.csv \${Negative} \${Positive} --PRIMERS \${primers} --nGuidesPerConcatamer ${params.nGuidesPerConcatamer}
+fi
 
 
 log_array=()

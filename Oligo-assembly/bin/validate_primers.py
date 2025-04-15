@@ -25,7 +25,7 @@ argparser = argparse.ArgumentParser(
     description='This script validates the primers.')
 argparser.add_argument('--Primer_Customs', metavar='string', dest='Primer_custom',
                        type=str, required=True, help='Custom primer forw,rev')
-
+parser.add_argument('-s', action='store_true', help 'Sensor assembly flag')
 
 def is_invalid_sequence(seq):
     return re.fullmatch(r'[atcgATCG]+', seq) is None
@@ -41,7 +41,7 @@ def validate_primers(Primer_custom):
             errors.append(f"Primers are limited to nuclotides (i.e. ACGT)")
         else :
             if (is_invalid_sequence(list_primer[0]) or is_invalid_sequence(list_primer[1])):
-                errors.append(f"Primers are limited to nuclotides (i.e. ACGT)") 
+                errors.append(f"Primers are limited to nuclotides (i.e. ACGT)")
     if errors:
         with open('primer.err', 'w') as error_file:
             error_file.write('\n'.join(errors))

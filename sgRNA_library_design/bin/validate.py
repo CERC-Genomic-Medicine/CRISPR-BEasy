@@ -41,6 +41,7 @@ argparser.add_argument('-B', '--Border', metavar='bp', dest='border', type=int, 
                        default=30, help='Border to be included around feature as define in feature options')
 argparser.add_argument('-F', '--Features', metavar='Annotation', dest='features', type=str,
                        required=False, nargs='*', default=['CDS'], help='Feature Types to be analysed (default exons)')
+argparser.add_argument('-L','--limit', dest = 'limit', type=int, required = False, help = 'base pair Limit')
 argparser.add_argument('-I','--isoform', dest = 'isoform', type=str, required = False, help = 'Which Isofrom filter shoudl be applied (None, Canonical MANE ')
 argparser.add_argument('--protist', dest = 'protist', action='store_true', required = False, help = 'Protist do not have transcript level because there is no alternate isoform')
 
@@ -180,7 +181,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
     Lines = prot.readlines()
     gen_errors=[]
     fetch_error=[]
-    returned = pd.DataFrame(columns=['Chromosome', 'Start', 'End', 'protein'])
+    returned = pd.DataFrame(columns=['Chromosome', 'Start', 'End', 'Gene'])
     if os.stat(file).st_size == 0:
         return gen_errors, fetch_error, returned
     try :
@@ -203,7 +204,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
             if invalidity :
                 fetch_error = fetch_error + [invalidity]
                 continue
-            df={'Chromosome':[chrom],'Start':[start],'End' : [end], 'protein': [protein]}
+            df={'Chromosome':[chrom],'Start':[start],'End' : [end], 'Gene':[protein]}
             returned=pd.concat([returned,pd.DataFrame(df)], axis=0, ignore_index=True)
         else:
             PAM_occurences = []
@@ -213,7 +214,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                 PAM_occurences.extend(Feature_Annotation_protist(Feature,protein))
                 pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=['Chromosome', 'Start', 'End'])).merge()
                 df = pyranges.as_df()
-                df['protein'] = protein
+                df['Gene'] = protein
                 returned=pd.concat([df,returned])
             elif args.isoform == 'MANE':
                 if args.genome != 'hg38':
@@ -231,6 +232,9 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                     else :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a MANE isoform in database']
                         continue
+                if not q :
+                        fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a MANE isoform in database']
+                        continue
             elif args.isoform == 'Canonical':
                 try : q=[f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0]) if 'tag' in f.attributes.keys() and 'Ensembl_canonical' in f.attributes['tag']]
                 except gffutils.exceptions.FeatureNotFoundError :
@@ -244,6 +248,9 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                     else :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a Canonical isoform in database']
                         continue
+                if not q :
+                    fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a Canonical isoform in database']
+                    continue
             else:
                 try : q = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
                 except gffutils.exceptions.FeatureNotFoundError :
@@ -357,8 +364,8 @@ if __name__ == '__main__':
         positive_pr = pr.PyRanges(positive_df[['Chromosome', 'Start', 'End']])
         negative_pr = pr.PyRanges(negative_df[['Chromosome', 'Start', 'End']])
         length = target_pr.lengths().sum() + negative_pr.lengths().sum() + positive_pr.lengths().sum()
-        if length > 800000:
-            print(f'::error:: libraries queries regions total is too high ({length} > 800000')
+        if length > args.limit:
+            print(f'::error:: libraries queries regions total is too high ({length} > {args.limit}')
             sys.exit("Error exit")
         if target_pr.join(positive_pr) :
             print(f'::error:: The Target library and Positive library overlaps {target_pr.join(positive_pr)}')

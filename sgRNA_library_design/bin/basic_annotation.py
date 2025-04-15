@@ -37,16 +37,20 @@ argparser.add_argument('-G','--Genome', metavar = 'file', dest = 'Genome_file', 
 argparser.add_argument('--head', metavar = 'file', dest = 'header', type = str, required = True, help = 'VCF formats contig file')
 
 def MutateWindow(rower,edit):
-        windowSeq=str(Genome_dict[rower.Chromosome][(rower.editing_windowSTART-1):(rower.editing_windowEND)].seq).upper()
+#        print(str(rower.editing_windowSTART-1))
+#        print(type(rower.editing_windowSTART - 1))
+#        print(rower.editing_windowEND)
+#        print(type(rower.editing_windowEND))
+        windowSeq=str(Genome_dict[str(rower.Chromosome)][(rower.editing_windowSTART-1):(rower.editing_windowEND)].seq).upper()
         if args.gc and ((rower.strand=='+' and edit['before+'].upper()=='C') or (rower.strand=='-' and edit['before-'].upper()=='G')) :
                 returned=""
                 for nuc in range(rower.editing_windowSTART-1,rower.editing_windowEND):
-                        if rower.strand=='+' and str(Genome_dict[rower.Chromosome][nuc]).upper() ==edit['before+'].upper() and Genome_dict[rower.Chromosome][nuc-1].upper()!='G' :
+                        if rower.strand=='+' and str(Genome_dict[str(rower.Chromosome)][nuc]).upper() ==edit['before+'].upper() and Genome_dict[str(rower.Chromosome)][nuc-1].upper()!='G' :
                                 returned=returned+edit['after+']
-                        elif rower.strand=='-' and str(Genome_dict[rower.Chromosome][nuc]).upper() ==edit['before-'].upper() and Genome_dict[rower.Chromosome][nuc+1].upper()!='C' :
+                        elif rower.strand=='-' and str(Genome_dict[str(rower.Chromosome)][nuc]).upper() ==edit['before-'].upper() and Genome_dict[str(rower.Chromosome)][nuc+1].upper()!='C' :
                                 returned=returned+edit['after-']
                         else:
-                                returned=returned+Genome_dict[rower.Chromosome][nuc]
+                                returned=returned+Genome_dict[str(rower.Chromosome)][nuc]
         else :
                 returned=windowSeq.replace(edit['before+'],edit['after+']) if rower.strand=='+' else windowSeq.replace(edit['before-'],edit['after-'])
         return windowSeq, returned
@@ -57,16 +61,15 @@ if __name__ == '__main__':
                 editor=pd.read_csv(args.Editor,index_col='name',sep='\\s+', names=['name','window_start','window_end','before+','after+'])
                 editor['after-']=[str(Seq(y).reverse_complement()) for y in editor['after+']]
                 editor['before-']=[str(Seq(y).reverse_complement()) for y in editor['before+']]
-                print(editor)
-
+#                print(editor)
         if args.gc :
                 Genome_dict = SeqIO.to_dict(SeqIO.parse(args.Genome_file, "fasta"))
-        scoreGuides=pd.read_csv(args.scoreGuide,sep='\t',header=0)
+        scoreGuides=pd.read_csv(args.scoreGuide,sep='\t',header=0,index_col=None)
         scoreGuides.drop_duplicates(subset='spacer', inplace=True, keep=False)
         scoreGuides['targetSeq_plusStrand']=[str(Seq(row.protospacer).reverse_complement()) if '-' in  row['strand']  else row['protospacer'] for index, row in scoreGuides.iterrows()]
         ### Find protein corresponding
         scoreGuides['start_seqId']=scoreGuides['start']
-        print(scoreGuides)
+#        print(scoreGuides)
         ### Find proiten
         bed=pr.read_bed(args.bed)
         protein=[]
@@ -80,22 +83,39 @@ if __name__ == '__main__':
                         protein.extend(list(set(names)))
         scoreGuides['Protein']=protein
         prots=set(protein)
-        scoreGuides.sort_values(['Protein','ID','strand'])
-        scoreGuides['num']= scoreGuides.groupby(['Protein']).cumcount()+1
-        scoreGuides['ID']=scoreGuides['Protein']+'_'+ [str(j) for j in scoreGuides['num']]
+        scoreGuides['ID'] = scoreGuides['Protein'] + '_' + scoreGuides['start'].astype(str) +'_'+scoreGuides['strand']
         scoreGuides.index=scoreGuides['ID']
         with  open(args.Output+'_general.csv', 'wt') as general :
-                general.write('ID,Protospacer,PAM,gRNA_seq_POSstrand,Chromosome,POSstart,strand,library\n')
+                # Columns to include (preserving original spelling)
+                base_columns = [
+                'ID', 'Protospacer', 'PAM', 'gRNA_seq_POSstrand',
+                'Chromosome', 'POSstart', 'strand', 'library', 'Protein'
+                ]
+                # Additional non-conflicting columns (exclude those already in base_columns)
+                extra_columns = [
+                'spacer', 'protospacer', 'start', 'end', 'pam_site', 'cut_site', 'percentGC',
+                'polyA', 'polyC', 'polyG', 'polyT', 'startingGGGGG',
+                'n0', 'n1', 'n2', 'n3', 'ContextSequence',
+                'RS3_hsu2013', 'RS3_Chen2013', 'sgRNA_CFD_score'
+                ]
+                final_columns = base_columns + [col for col in extra_columns if col not in base_columns and col in scoreGuides.columns]
+                general.write(','.join(final_columns) + '\n')
                 for index, row in scoreGuides.iterrows():
-                        general.write('{ID},{protospacer},{PAM},{gRNA_seq_POS},{chrom},{POSstart},{strand},{library}\n'.format(
-                                ID=row.ID,
-                                protospacer=row['protospacer'],
-                                PAM=row['PAM'],
-                                gRNA_seq_POS=str(Seq(row.protospacer).reverse_complement()) if '-' == row['strand']  else row['protospacer'],
-                                chrom=row['Chromosome'],
-                                strand=row.strand,
-                                POSstart=str(row.start),
-                                library=args.Name))
+                        row_dict = {
+                        'ID': row.ID,
+                        'Protospacer': row['protospacer'],
+                        'PAM': row['PAM'],
+                        'gRNA_seq_POSstrand': str(Seq(row['protospacer']).reverse_complement()) if row['strand'] == '-' else row['protospacer'],
+                        'Chromosome': row['Chromosome'],
+                        'POSstart': str(row['start']),
+                        'strand': row['strand'],
+                        'library': args.Name
+                        }
+                        # Add extra fields if available
+                        for col in final_columns:
+                                if col not in row_dict:
+                                        row_dict[col] = str(row[col]) if col in row and not pd.isna(row[col]) else ''
+                        general.write(','.join(str(row_dict[col]) for col in final_columns) + '\n')
         ### producting Edditor specific files
         if not args.Editor == None :
                 for index, i in editor.iterrows() :

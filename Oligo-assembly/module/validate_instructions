@@ -37,7 +37,12 @@ else
   touch Instructions_validated.txt
 fi
 
-validate_primers.py --Primer_Customs "${params.Primer_forward},${params.Primer_reverse}"
+if [ "${params.sensor}"=="true" ] ' then
+sensorVAR='-s'
+else
+sensorVAR=''
+fi
+validate_primers.py --Primer_Customs "${params.Primer_forward},${params.Primer_reverse}" \${sensorVAR}
 
 if [ -e "Instructions.err" ]; then
   mapfile -t new_lines < "Instructions.err"
@@ -54,16 +59,22 @@ if [ -e "primer.ok" ]; then
   good_array+=("\${new_lines[@]}")
 fi
 
+if [[ "${params.sensor}" == "true" ]]; then
+   good_array+=("- Parameter <b>Assembly type</b>: Sensor. Guide per Concatamer will be ignored")
+else
+if [[ ${params.nGuidesPerConcatamer} -eq 1 || ${params.nGuidesPerConcatamer} -eq 2 || ${params.nGuidesPerConcatamer} -eq 3 || ${params.nGuidesPerConcatamer} -eq 4 ]]; then
+    good_array+=("- Parameter <b>Assembly type</b>: \'traditional\' base editing screens")
+    good_array+=("Number of Guides per Concatemer is valid")
+else
+    error_array+=("Number of Guides per Concatemer must be 1,2,3 or 4")
+fi
+fi
+
 if [ -e "Instructions.ok" ]; then
   mapfile -t new_lines < "Instructions.ok"
   good_array+=("\${new_lines[@]}")
 fi
 
-if [[ ${params.nGuidesPerConcatamer} -eq 1 || ${params.nGuidesPerConcatamer} -eq 2 || ${params.nGuidesPerConcatamer} -eq 3 || ${params.nGuidesPerConcatamer} -eq 4 ]]; then
-    good_array+=("Number of Guides per Concatemer is valid")
-else
-    error_array+=("Number of Guides per Concatemer must be 1,2,3 or 4")
-fi
 
 if [ "\${#error_array[@]}" -gt 0 ]; then
   echo "::group type=error::"

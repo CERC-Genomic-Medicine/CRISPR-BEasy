@@ -68,7 +68,7 @@ workflow {
 Channel
     .from(params.Editors)
     .map { content ->
-        def file = File.createTempFile('Editors', '.txt')  // Create a temporary file
+        def file = new File("${workflow.workDir}/Editors_${params.project}.txt")
         file.text = content  // Write the string content to the file
         return file.path  // Return the file path to the channel
     }
@@ -77,7 +77,7 @@ Channel
 Channel
     .from(params.protein_id)
     .map { content ->
-        def file = File.createTempFile('Protein', '.txt')  // Create a temporary file
+        def file = new File("${workflow.workDir}/Target_${params.project}.txt")
         file.text = content  // Write the string content to the file
         return file.path  // Return the file path to the channel
     }
@@ -86,7 +86,7 @@ Channel
 Channel
     .from(params.protein_Pos)
     .map { content ->
-        def file = File.createTempFile('Positive', '.txt')  // Create a temporary file
+        def file = new File("${workflow.workDir}/Positive_${params.project}.txt")
         file.text = content  // Write the string content to the file
         return file.path  // Return the file path to the channel
     }
@@ -95,7 +95,7 @@ Channel
 Channel
     .from(params.protein_Neg)
     .map { content ->
-        def file = File.createTempFile('Negative', '.txt')  // Create a temporary file
+        def file = new File("${workflow.workDir}/Negative_${params.project}.txt")
         file.text = content  // Write the string content to the file
         return file.path  // Return the file path to the channel
     }

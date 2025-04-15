@@ -1,8 +1,7 @@
-id: sgRNA_library_design
-name: sgRNA_library_design
-version: 1.0a
-release: experimental
-description: "A Nextflow CRISPR library preparation pipeline."
+id: sgRNA_library_Design_distributed_split
+name: 'Step I: SgRNA Library Design'
+version: 3.0a
+description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 
 workflow:
@@ -33,51 +32,123 @@ workflow:
           label: 'Validate Inputs and Fetch Queried Regions'
           group: 'Validation'
         - process: "Crispr_Positive_library_prep:CRISPRverse"
-          view: label
+          view: progressbar
           label: "Running CRISPRverse"
           group: "Crispr_Positive_library_prep"
         - process: "Crispr_Negative_library_prep:CRISPRverse"
-          view: label
+          view: progressbar
           label: "Running CRISPRverse"
           group: "Crispr_Negative_library_prep"
         - process: "Crispr_Target_library_prep:CRISPRverse"
+          view: progressbar
+          label: "Running CRISPRverse"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:split_bed"
           view: label
+          label: "Segmenting genomic regions for downstream analysis"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:split_bed"
+          view: label
+          label: "Segmenting genomic regions for downstream analysis"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:split_bed"
+          view: label
+          label: "Segmenting genomic regions for downstream analysis"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:combine_failed"
+          view: status
+          label: "Running CRISPRverse"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:combine_failed"
+          view: status
+          label: "Running CRISPRverse"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:combine_failed"
+          view: status
           label: "Running CRISPRverse"
           group: "Crispr_Target_library_prep"
         - process: "Crispr_Positive_library_prep:OnTarget"
-          view: label
+          view: progressbar
           label: "Calculating on-target efficiency"
           group: "Crispr_Positive_library_prep"
         - process: "Crispr_Negative_library_prep:OnTarget"
-          view: label
+          view: progressbar
           label: "Calculating on-target efficiency"
           group: "Crispr_Negative_library_prep"
         - process: "Crispr_Target_library_prep:OnTarget"
-          view: label
+          view: progressbar
           label: "Calculating on-target efficiency"
           group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:OffTarget"
+          view: progressbar
+          label: "Filtering Based on Off-Targets"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:OffTarget"
+          view: progressbar
+          label: "Filtering Based on Off-Targets"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:OffTarget"
+          view: progressbar
+          label: "Filtering Based on Off-Targets"
+          group: "Crispr_Target_library_prep"
         - process: "Crispr_Positive_library_prep:Basic_Annotation"
-          view: label
+          view: progressbar
           label: "Predicting Mutations"
           group: "Crispr_Positive_library_prep"
         - process: "Crispr_Negative_library_prep:Basic_Annotation"
-          view: label
+          view: progressbar
           label: "Predicting Mutations"
           group: "Crispr_Negative_library_prep"
         - process: "Crispr_Target_library_prep:Basic_Annotation"
-          view: label
+          view: progressbar
+          label: "Predicting Mutations"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:combine_general"
+          view: status
+          label: "Predicting Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:combine_general"
+          view: status
+          label: "Predicting Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:combine_general"
+          view: status
+          label: "Predicting Mutations"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:combine_vcfs"
+          view: status
+          label: "Predicting Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:combine_vcfs"
+          view: status
+          label: "Predicting Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:combine_vcfs"
+          view: status
           label: "Predicting Mutations"
           group: "Crispr_Target_library_prep"
         - process: "Crispr_Positive_library_prep:annotate"
-          view: label
+          view: progressbar
           label: "Annotate Predicted Mutations"
           group: "Crispr_Positive_library_prep"
         - process: "Crispr_Negative_library_prep:annotate"
-          view: label
+          view: progressbar
           label: "Annotate Predicted Mutations"
           group: "Crispr_Negative_library_prep"
         - process: "Crispr_Target_library_prep:annotate"
-          view: label
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:combine_annotations"
+          view: status
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:combine_annotations"
+          view: status
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:combine_annotations"
+          view: status
           label: "Annotate Predicted Mutations"
           group: "Crispr_Target_library_prep"
         - process: "Finalization:combine_csv"
@@ -113,15 +184,15 @@ workflow:
       description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>)
       type: textarea
       required : true
-      details: A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 80k bp in total (with controls).
+      details: 'A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls).'
 
     - id : genome
-      description : Genome Build
+      description : Genome Build <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-do-i-request-a-new-genome" target="_blank">Missing your genome ?</a>)
       required : true
       type : list
       value : 'hg38'
       values :
-        hg38 : 'Homo sapien - hg38'
+        hg38 : 'Homo sapiens - hg38'
         mm39 : 'Mus musculus - mm39'
         GRCg7b : 'Gallus Gallus - bGalGal1.mat.broiler.GRCg7b'
         ASM584v2 : 'Escherichia coli - ASM584v2'
@@ -138,7 +209,7 @@ workflow:
       type : radio
       value : None
       values :
-        MANE: MANE (only available on certain genomes)
+        MANE: MANE (only available on the human genome)
         Canonical: Canonical
         None: All isoform
 
@@ -153,7 +224,7 @@ workflow:
       type: separator
 
     - id : casName
-      description : Cas variant <br> (<a href="http://crispor.gi.ucsc.edu/manual/manual.html#enzymes" target="_blank">Details</a>)
+      description : Cas variant <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#cas-variant-available" target="_blank">Details</a>)
       required : true
       type : list
       value : 'SpCas9'
@@ -191,7 +262,7 @@ workflow:
         enAsCas12a : "23 bp - TTNN - enAsCas12a"
 
     - id : Editors
-      description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEeasy/More_information/#editors" target="_blank">Details</a>)
+      description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#editors" target="_blank">Details</a>)
       required : true
       type : textarea
       details : 'Space-delimited description of editors. Columns: id, start window of activity, end window of activity, nucleotide modified, resulting nucleotide.'
@@ -212,14 +283,14 @@ workflow:
       description : 'Limit count of predicted off-targets alignement' 
       required : false
       type : number
-      details : 'Accepted range: 1-10 ; blank for unfiltered'
+      details : 'Accepted range: 0-10 ; blank for unfiltered'
 
     - id : CFD_Threshold
-      description : Threshold score for off-targets (CDF score)
+      description : Threshold score for off-targets (CDF score) <br>  (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/" target="_blank">Details</a>)
       required : false
       type : number
       details : Float number ]0-1]
-      details : 'Scoring is designed for spCAS9 but experimentaly allowed on all CAS9 ; leave blank for unfiltered,'
+      details : 'CFD scores are designed for SpCas9 (Doench et al, Nat Biotechnol, 2016). Check "details" for other Cas9 variants. Leave blank for unfiltered'
     
     - id : feature
       description : 'list of space delimited protein features to be considered'
@@ -245,7 +316,7 @@ workflow:
       type: separator
 
     - id : protein_Pos 
-      description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEeasy/More_information/" target="_blank">Details</a>)
+      description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       type: textarea
       details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
       required : false
@@ -254,7 +325,7 @@ workflow:
       type: separator
 
     - id : protein_Neg
-      description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEeasy/More_information/" target="_blank">Details</a>)
+      description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
       type: textarea
       required : false
