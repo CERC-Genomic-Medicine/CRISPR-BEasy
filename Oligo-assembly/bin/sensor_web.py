@@ -140,8 +140,21 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
             return Used, Unused, error_list_positive
             
 
+def filter_by_enzyme_oligo(df: pd.DataFrame, first_enzyme: str, sec_enzyme: str) -> pd.DataFrame:
+    rev_first = str(Seq(first_enzyme).reverse_complement())
+    rev_sec = str(Seq(sec_enzyme).reverse_complement())
 
+    cond = (
+        (df['Oligo'].str.count(first_enzyme) == 1) &
+        (df['Oligo'].str.count(sec_enzyme) == 1)
+    )
 
+    if rev_first != first_enzyme:
+        cond &= df['Oligo'].str.count(rev_first) == 0
+    if rev_sec != sec_enzyme:
+        cond &= df['Oligo'].str.count(rev_sec) == 0
+
+    return df[cond]
 
 
 if __name__ == '__main__':
@@ -152,15 +165,13 @@ if __name__ == '__main__':
     primers_reverse = str(Seq(args.Primers.split(',')[1]).reverse_complement())
     primers_forward = args.Primers.split(',')[0]
     Target["Oligo"] = Target.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
-    Target=Target[Target['Oligo'].str.count(args.First_enzyme) == 1]
-    Target=Target[Target['Oligo'].str.count(args.Sec_enzyme) == 1]
+    Target = filter_by_enzyme_oligo(Target, args.First_enzyme, args.Sec_enzyme)
     Target['editor']='NA'
     Library_list = []
     if args.Positive: 
         Positive = pd.read_csv(args.Positive)
         Positive["Oligo"] = Positive.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
-        Positive=Positive[Target['Oligo'].str.count(args.First_enzyme) == 1]
-        Positive=Positive[Target['Oligo'].str.count(args.Sec_enzyme) == 1]
+        Positive = filter_by_enzyme_oligo(Positive, args.First_enzyme, args.Sec_enzyme)
         instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'])
         Positive_length= sum([int(i) for i in instructions['N']])
     else :
@@ -169,8 +180,7 @@ if __name__ == '__main__':
     if args.Negative:     
         Negative = pd.read_csv(args.Negative)
         Negative["Oligo"] = Negative.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
-        Negative=Negative[Target['Oligo'].str.count(args.First_enzyme) == 1]
-        Negative=Negative[Target['Oligo'].str.count(args.Sec_enzyme) == 1]
+        Negative = filter_by_enzyme_oligo(Negative, args.First_enzyme, args.Sec_enzyme)
         N=len(Negative.ID) if args.negative_number == 0 else args.negative_number
     else :  
         Negative = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
@@ -200,7 +210,6 @@ if __name__ == '__main__':
     if protospacer_overlap :
         log.append(f"{str(sum(len(values) for values in protospacer_overlap.values()))} guides were discarded due to their duplicate protospacers with other guides")
     if args.negative_number>=0 and not Negative.empty :
-        log.append(f"  {len(Negative['ID'])} guides in negative library. {removed_negative} removed du to restriction sites")
         log.append(f"\t{N} requested in from negative control library")
         if N > len(Negative.ID) :
             error_list.append(f'Too many guides were asked in negative controls library')
@@ -209,7 +218,6 @@ if __name__ == '__main__':
         else :
             error_list.append(f" Negative library was too short to overcome the burden of completing concatamer \n Means there would be no Negative controls")
     if  not (Positive.empty  or  p_VEP.empty) :
-        log.append(f"{len(Positive['ID'])} guides in positive control library (total). {removed_positive} removed du to restriction sites")
         log.append(f"{sum([int(i) for i in instructions['N']])} total guides requested from positive control library (pooled)")
         Library_list_Positive, Unused, errors = Positive_library_sel(instructions,Positive,p_VEP)
         if errors :

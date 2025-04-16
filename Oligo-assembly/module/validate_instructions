@@ -37,12 +37,13 @@ else
   touch Instructions_validated.txt
 fi
 
-if [ "${params.sensor}"=="true" ] ' then
+if [ "${params.sensor}"=="true" ] ; then
 sensorVAR='-s'
 else
 sensorVAR=''
 fi
 validate_primers.py --Primer_Customs "${params.Primer_forward},${params.Primer_reverse}" \${sensorVAR}
+
 
 if [ -e "Instructions.err" ]; then
   mapfile -t new_lines < "Instructions.err"

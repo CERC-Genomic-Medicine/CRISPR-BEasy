@@ -79,7 +79,7 @@ def validate_ids(main_df, other_df_dictionnairy, out):
         with open(f'correspondance_{out}.err', 'w') as error_file:
             error_file.write("ID\tFilename\n")
             error_file.write("\n".join(errors))
-        print("Validation failed. Errors written to errors.txt.")
+        print("Validation failed. Error  written to errors.txt.")
 
 def check_for_pick_flag(dataframes):
     if dataframes =={} :
@@ -144,7 +144,7 @@ def filter_pick_in_editor_sheets(editor_sheets):
     
     for sheet_name, df in editor_sheets.items():
         if 'PICK' in df.columns:
-            filtered_df = df.loc[df['PICK']==1,:]
+            filtered_df = df.loc[df['PICK'].astype(str) == "1",:]
             filtered_sheets[sheet_name] = filtered_df
         else:
             filtered_sheets[sheet_name] = df
@@ -161,7 +161,7 @@ def main(xlsx ,output_prefix):
     # If there are no errors, proceed with concatenation and duplicate checking
     if not error_list:
         if check_for_pick_flag(dataframes):
-            dataframes = filter_for_pick(dataframes)
+            dataframes = filter_pick_in_editor_sheets(dataframes)
         duplicated_rows = check_duplicates(dataframes)
         concatenated_df = concatenate_dataframes(dataframes)
         # Check for duplicates and save them

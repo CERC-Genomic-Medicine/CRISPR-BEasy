@@ -76,7 +76,6 @@ Channel
     if (params.Library_positive) { 
     	Positive_Annotations = Validate_Positive_control_library(Positive_ch) 
     	Annotations = Positive_Annotations.Annotation
-	list_Annotations.view()
 	Oligomer_WEB(Instruction,general.CSV.collect(),Annotations)
        } else {
    		Oligomer_WEB(Instruction,general.CSV.collect(),[])

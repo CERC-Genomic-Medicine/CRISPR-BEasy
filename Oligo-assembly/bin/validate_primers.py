@@ -25,7 +25,7 @@ argparser = argparse.ArgumentParser(
     description='This script validates the primers.')
 argparser.add_argument('--Primer_Customs', metavar='string', dest='Primer_custom',
                        type=str, required=True, help='Custom primer forw,rev')
-parser.add_argument('-s', action='store_true', help 'Sensor assembly flag')
+argparser.add_argument('-s', action='store_true', help='Sensor assembly flag')
 
 def is_invalid_sequence(seq):
     return re.fullmatch(r'[atcgATCG]+', seq) is None
