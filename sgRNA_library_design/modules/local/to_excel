@@ -6,7 +6,7 @@ process to_excel {
    val(output)
 
   output : 
-    path("*.xlsx")
+    path("*.xlsx"), optional: true
 
 
 publishDir "${params.Libraries}/", pattern: "*.xlsx", mode: "copy"

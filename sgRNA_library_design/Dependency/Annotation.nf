@@ -14,9 +14,6 @@ process annotate {
 	path("${vcf.getSimpleName()}.vep.tsv"), emit: Annotations
         path("*.sorted.vcf.gz"), emit: test
 
-        publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.vep.tsv", mode: "copy"
-        publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.sorted.vcf.gz", mode: "copy"
-        
         script:
 	def species
 	def cache_version
@@ -35,7 +32,7 @@ process annotate {
             break
         case "CHOK1S_HDv1":
             species = "cricetulus_griseus_chok1gshd"
-            cache_version='--cache_version 60'
+            cache_version='--cache_version 112'
             break
         case "ASM584v2":
             species = "escherichia_coli_o157_h7_str_sakai_gca_000008865"

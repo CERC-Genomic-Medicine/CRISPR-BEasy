@@ -22,9 +22,9 @@ import pyranges as pr
 from natsort import natsorted, index_natsorted, order_by_index
 
 
-argparser = argparse.ArgumentParser(description = 'This Software is a part of a pipeline tool to design Guiding RNA. \n This script relates back the CRISPOR output an initial genome annotation and optionnaly can provide editor specific annotation (Clinvar and/or VCF file)')
+argparser = argparse.ArgumentParser(description = 'This Software is a part of a pipeline tool to design Guiding RNA. \n This script creates an summary of sgRNA and optionnaly can provide editor specific annotation (VCF file)')
 argparser.add_argument('-E','--Editor', metavar = 'file name', dest = 'Editor', type = str, required = False, default=None, help = 'Editor type (will be examined against reference)')
-argparser.add_argument('-S','--ScoreGuide', metavar = 'file name', dest = 'scoreGuide', type = str, required = True, help = 'Crispor ouput')
+argparser.add_argument('-S','--ScoreGuide', metavar = 'file name', dest = 'scoreGuide', type = str, required = True, help = 'sgRNA scored file')
 argparser.add_argument('-O','--Output', metavar = 'file', dest = 'Output', type = str, required = False,default='out', help = 'prefix of the vcf')
 argparser.add_argument('-n','--Name', metavar = 'string', dest = 'Name', type = str, required = False, default='Target', help = 'Library name')
 argparser.add_argument('-X','--exclude', metavar = 'file', dest = 'excludes', type = str, required = False, default ='', help = 'List of Guides to exclude')

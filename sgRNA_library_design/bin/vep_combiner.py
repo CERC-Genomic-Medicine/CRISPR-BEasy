@@ -2,10 +2,10 @@
 import pandas as pd
 import argparse
 
-def map_joined_column(df, col, id_map, sep=","):
-    def map_cell(cell):
-        return sep.join([id_map.get(part, part) for part in str(cell).split(sep)])
-    return df[col].apply(map_cell)
+def map_joined_column(row,col, id_map, sep=","):
+    data = row[col].split(sep)
+    mapped = [id_map[i] for i in data]
+    return ','.join(mapped)
 
 def main():
     parser = argparse.ArgumentParser(description="Combine and remap VEP annotation files using a provided ID mapping.")
@@ -18,8 +18,8 @@ def main():
     args = parser.parse_args()
 
     # Read and merge VEP files
-    vep_frames = [pd.read_csv(f, sep='\t') for f in args.vep]
-    vep_combined = pd.concat(vep_frames).drop_duplicates()
+    vep_frames = [pd.read_csv(f, sep='\s+') for f in args.vep]
+    vep_combined = pd.concat(vep_frames,ignore_index=True).drop_duplicates()
 
     # Load ID mapping
     dict_df = pd.read_csv(args.ids, sep='\t')
@@ -28,7 +28,9 @@ def main():
 
     # Remap variation IDs
     editor = vep_combined['editor'][0]
-    vep_combined[editor]=map_joined_column(vep_combined, editor, id_map, sep=",")
+    print(vep_combined[editor])
+    vep_combined[editor] = vep_combined.apply(lambda row: map_joined_column(row, editor, id_map, sep=","), axis=1)
+    #vep_combined=vep_combined.drop(editor, axis=1)
     vep_combined['#Uploaded_variation'] = vep_combined['#Uploaded_variation'].map(id_map).fillna(vep_combined['#Uploaded_variation'])
 
 

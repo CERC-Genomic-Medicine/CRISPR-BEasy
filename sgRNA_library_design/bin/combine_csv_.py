@@ -13,7 +13,7 @@ def main():
 
     # Combine CSV files
     csv_frames = [pd.read_csv(f) for f in args.csv]
-    csv_combined = pd.concat(csv_frames).drop_duplicates()
+    csv_combined = pd.concat(csv_frames,ignore_index=True).drop_duplicates()
 
     # Sort and generate ID
     csv_combined = csv_combined.sort_values(['ID'])
@@ -21,6 +21,8 @@ def main():
     num = csv_combined.groupby(['Protein']).cumcount() + 1
     csv_combined['ID'] = csv_combined['Protein'] + '_' + num.astype(str)
     csv_combined = csv_combined[['ID'] + [col for col in csv_combined.columns if col != 'ID']]
+    csv_combined=csv_combined.drop('spacer', axis=1)
+    csv_combined=csv_combined.drop('Protospacer', axis=1)
 
     # Output combined CSV
     csv_combined.to_csv(f"{args.output}.csv", index=False)

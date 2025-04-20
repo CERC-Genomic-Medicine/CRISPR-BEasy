@@ -1,9 +1,8 @@
 id: sgRNA_library_Design_distributed_split
 name: 'Step I: SgRNA Library Design'
-version: 3.0a
+version: 0.1a
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
-
 workflow:
 
   steps:
@@ -197,11 +196,13 @@ workflow:
         GRCg7b : 'Gallus Gallus - bGalGal1.mat.broiler.GRCg7b'
         ASM584v2 : 'Escherichia coli - ASM584v2'
         TAIR10 : 'Arabidopsis Thaliana - TAIR10'
+        mRatBN7.2 : 'Rattus norvegicus - mRatBN7.2'
         WBCel235 : ' Caenorhabditis elegans - WBCel235'
         R64_1_1 : 'Saccharomyces cerevisiae - R64'
         BDGP_6 : 'Drosophila melanogaster - dm6'
         GRCz11 : 'Danio Rerio - GRCz11'
         ASM294v2 : 'Schizosaccharomyces pombe - ASM294v2'
+        CHOK1S_HDv1 : 'Chinese Hamster Ovary cell line - CHOK1S_HDv1'
 
     - id : isoform
       description : "Isoform to select"
