@@ -22,7 +22,7 @@ def No_CFD = "F"
 def CFD_threshold = "F"
 def CFD_count = "F"
 
-if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
+if ( "$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
     No_CFD = "T"
 }
 
@@ -203,10 +203,18 @@ switch (params.casName) {
 
 def Protist
 
-if ("$params.genome" in ['R64_1_1', 'ASM294v3', 'ASM584v2']) {
-    Protist = "TRUE"
-} else {
-    Protist = "FALSE"
+switch ("$params.genome") {
+    case "R64_1_1":
+        Protist = ""
+        break
+    case "ASM294v3":
+        Protist = "--protist"
+        break
+    case "ASM584v2":
+        Protist = "--protist"
+        break
+    default :
+        Protist = ""
 }
 
     """
@@ -214,11 +222,6 @@ if ("$params.genome" in ['R64_1_1', 'ASM294v3', 'ASM584v2']) {
     source ${params.Python_env}
     error_array=()
     good_array=()
-    if [ "${Protist}" == "TRUE" ]; then
-	protist_flag='--protist'
-else 
-protist_flag=''
-fi
 
     good_array+=("<LI> Parameter Genome : ${params.genome}")
     good_array+=("<LI> Parameter Flanking Region : ${params.border} bp (bases to consider on each side of the selected gene feature)")
@@ -256,7 +259,7 @@ fi
    else
         encode=''
    fi
-    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} \${protist_flag} -L ${params.limit_bp}
+    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} ${Protist} -L ${params.limit_bp}
    
    if [ -e errors.err ]; then
     mapfile -t new_lines < "errors.err"

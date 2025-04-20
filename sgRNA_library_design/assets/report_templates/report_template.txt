@@ -65,15 +65,32 @@
     </div>
 
     <script type="module">
-      //      const mimeType = 'application/javascript'
-      //      import assembly from '/script/assembly.js'
-      //      import tracks from '/script/tracks.js'
       var currentURL = window.location.href;
 
       // Remove the last part after the final "/"
       var baseURL = currentURL.substring(0, currentURL.lastIndexOf("/"));
       console.log(`${baseURL}/ancillary_files/report_summary.json`);
+      let firstRangeValue = null;
+      var currentURL = window.location.href;
+      var baseURL = currentURL.substring(0, currentURL.lastIndexOf("/"));
+      $.getJSON(`${baseURL}/ancillary_files/report_summary.json`).then(
+        (data) => {
+          if (
+            Array.isArray(data) &&
+            data.length > 0 &&
+            data[0].range !== undefined
+          ) {
+            firstRangeValue = data[0].range;
+            console.log("firstRangeValue:", firstRangeValue);
 
+            //      const mimeType = 'application/javascript'
+            //      import assembly from '/script/assembly.js'
+            //      import tracks from '/script/tracks.js'
+            var currentURL = window.location.href;
+
+            // Remove the last part after the final "/"
+            var baseURL = currentURL.substring(0, currentURL.lastIndexOf("/"));
+            console.log(`${baseURL}/ancillary_files/report_summary.json`);
       const { createViewState, loadPlugins, JBrowseLinearGenomeView } =
         JBrowseReactLinearGenomeView;
       const { createElement } = React;
@@ -118,12 +135,12 @@
             trackId: "knownGene",
             name: "UCSC geneidPep",
             category: ["Annotation"],
-            assemblyNames: ["hg38"],
+            assemblyNames: ["{{genome}}"],
             adapter: {
               type: "Gff3Adapter",
               gffLocation: {
                 type: "fileLocation",
-                uri: "{{baseurl}}/release-{{release}}/gff3{{collection}}/{{species_vep | lower}}/{{species_vep}}.{{genome_vep}}.{{release}}.chr.gff3.gz",
+                uri: "{{baseurl}}/release-{{release}}/gff3{{collection}}/{{species_vep | lower}}/{{species_vep}}.{{genome_vep}}.{{release}}.gff3.gz",
                 locationType: "UriLocation",
               },
             },
@@ -133,7 +150,7 @@
             trackId: "sgRNA",
             name: "sgRNA CRISPR-BE",
             category: ["1000 Genomes", "Alignments"],
-            assemblyNames: ["hg38"],
+            assemblyNames: ["{{genome}}"],
             adapter: {
               type: "BamAdapter",
               bamLocation: {
@@ -164,9 +181,9 @@
             },
           },
         ],
-        location: "chr1:26317990..26320351",
+        location: firstRangeValue,
         defaultSession: {
-          name: "my session",
+        name: "my session",
           view: {
             id: "linearGenomeView",
             type: "LinearGenomeView",
@@ -251,6 +268,9 @@
       render(
         createElement(JBrowseLinearGenomeView, { viewState: state }),
         document.getElementById("jbrowse_linear_genome_view"),
+      );
+                }
+        },
       );
 
       $("#jbrowse_linear_genome_view");

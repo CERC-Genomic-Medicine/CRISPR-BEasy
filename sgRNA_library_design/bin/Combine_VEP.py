@@ -4,9 +4,9 @@ import os
 import glob
 import pandas as pd
 import argparse
-argparser = argparse.ArgumentParser(description = 'Prepares summary stats about continuous phenotypes in the CARTaGENE study.')
+argparser = argparse.ArgumentParser(description = 'Merges all vep.tsv files within the workspace.')
 argparser.add_argument('-e', '--editor', metavar = 'name', dest = 'out_editor', type = str, required = True, help = 'Prefix for output files.')
-argparser.add_argument('-r', '--remove', metavar = 'name', dest = 'remove', type = str, required = True, help = 'remove ID.')
+argparser.add_argument('-r', '--remove', metavar = 'name', dest = 'remove', type = str, required = True, help = 'ID to remove.')
 
 if __name__ == '__main__':
     args = argparser.parse_args()

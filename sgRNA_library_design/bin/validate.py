@@ -200,6 +200,8 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                 continue
             chrom, start, end = match.groups()
             chrom, start, end = chrom, int(start), int(end)
+            if end <= start :
+                fetch_error = fetch_error + [f'{protein} \t end position {end} cannot be smaller (or equal) to start. {start}']
             invalidity = check_bed_overlap(encode_blacklist, chromosome_ranges, chrom, start,end,Library_type)
             if invalidity :
                 fetch_error = fetch_error + [invalidity]
@@ -211,7 +213,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
             if args.protist:
                 if args.isoform == 'MANE':
                     fetch_error = fetch_error + ['protist do not have MANE annotations']
-                PAM_occurences.extend(Feature_Annotation_protist(Feature,protein))
+                PAM_occurences.extend(Feature_Annotation_protist(args.features,protein))
                 pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=['Chromosome', 'Start', 'End'])).merge()
                 df = pyranges.as_df()
                 df['Gene'] = protein

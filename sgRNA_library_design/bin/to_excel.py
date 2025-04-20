@@ -5,7 +5,7 @@ import pandas as pd
 import argparse
 import xlsxwriter
 
-parser = argparse.ArgumentParser(description='This script produce a lolipop plot (with domain/feature annotations) base on a MaGeCK, a Variant Effect Prediction file (VEP), and bed style file')
+parser = argparse.ArgumentParser(description='This script produce an excel file based on the general annotation of library and the VEP annotation')
 parser.add_argument('-c', '--csv', metavar='FILE', dest='csv', required=True, type=str, help='')
 parser.add_argument('-v', '--vep', metavar='FILE', dest='vep_files', required=True, type=str, nargs='+', help='tab delimited variant effect prediction file (VEP) with id corresponding to input')
 parser.add_argument('-o', '--out', metavar='FILE', dest='output', required=True, type=str, help='')

@@ -8,7 +8,8 @@ process Basic_Annotation {
     path("*.csv"), emit : CSV
     path("*_empties.txt"), emit : empties 
     path("*.per_guides.vcf.gz") , emit : VCF
-    
+
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.vcf.gz", mode: "copy"
 
 script:
 

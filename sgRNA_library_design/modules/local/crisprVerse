@@ -35,7 +35,7 @@ input:
             bsgenome='BSgenome.Ggallus.NA.GRCg7b'
             break
         case "mRatBN7.2":
-            bsgenome='BSgenome.Rnorvegicus.NCBI.mRat'
+            bsgenome='BSgenome.Rnorvegicus.NA.mRat'
             break
         case "WBCel235" :
             bsgenome='BSgenome.Celegans.NA.WBCel235'

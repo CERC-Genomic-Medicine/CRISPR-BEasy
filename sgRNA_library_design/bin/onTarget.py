@@ -16,7 +16,7 @@ import rs3
 import itertools
 from rs3.seq import predict_seq
 
-argparser = argparse.ArgumentParser(description = 'This Software is a tool to design Guiding RNA. \n This scrip allow for the filtering based on off-target activity prediction.')
+argparser = argparse.ArgumentParser(description = 'This Software is a tool to design Guiding RNA. \n This script determines the offtarget score of a guide and the RS3 score.')
 argparser.add_argument('-I','--input', metavar = 'file', dest = 'Input', type = str, required = True, help = 'CrisprVerse input')
 argparser.add_argument('-A','--align', metavar = 'file', dest = 'align', type = str, required = True, help = 'CrisprVerse alignement input')
 argparser.add_argument('-C','--cas', metavar = 'str', dest = 'Cas', type = str, help = 'CAS variant')
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         CrisprVerse["RS3_Chen2013"]=Chen2013
     else :
         print(f'::notice:: Rule set 3 (Hsu et al ; Chen et al. 2013)  is not currently calculated for {args.Cas}  since it is too different from SpCas9 (the experimental basis for CFD scoring). We enable scoring for all SpCas9 variants on an experimental basis')
-    if len(CrisprVerse["spacer"][0]) == 20 and 'CFD_score' in CrisprVerseAlign.columns :
+    if len(CrisprVerse["spacer"][0]) == 20 and len(CrisprVerse["PAM"][0]) == 3 and 'CFD_score' in CrisprVerseAlign.columns :
 #                CrisprVerse_Spacer_site = CrisprVerse['spacer'] +'_'+ CrisprVerse['pam_site'].astype(str)
 #                CrisprVerseAlign_Spacer_site = CrisprVerseAlign['spacer'] +'_'+ CrisprVerseAlign['pam_site'].astype(str)
 #                CrisprVerseAlign = CrisprVerseAlign.loc[~CrisprVerseAlign_Spacer_site.isin(CrisprVerse_Spacer_site)]
