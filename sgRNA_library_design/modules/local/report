@@ -34,20 +34,22 @@ process report {
             break
         case "TAIR10":
             species = "Arabidopsis_thaliana"
+            genome_vep='TAIR10'
             release = '60'
             collection= ''
             baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants'
             break
         case "CHOK1S_HDv1":
             species = "Cricetulus_griseus_chok1gshd"
-            cache_version='113'
-            genome_vep='CHOK1S_HDv1'
+            release = '113'
+            genome_vep='CHOK1GS_HDv1'
             collection= ''
             baseurl='https://ftp.ensembl.org/pub'
             break
         case "ASM584v2":
             species = "Escherichia_coli_o157_h7_str_sakai_gca_000008865"
-            baseurl = '/ensemblgenomes/pub/bacteria'
+            baseurl = 'https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria'
+            genome_vep = 'ASM886v2'
             release ='60'
             collection= ' --collection /bacteria_128_collection'
             break
@@ -70,11 +72,11 @@ process report {
             genome_vep = 'WBcel235'
             release = '60'
             collection= ''
-            base_url = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/metazoa'
+            baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/metazoa'
             break
         case "R64_1_1":
             species = "Saccharomyces_cerevisiae"
-            base_url = 'R64-1-1'
+            genome_vep = 'R64-1-1'
             release = '60'
             collection= ''
             baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/fungi'
@@ -104,6 +106,7 @@ process report {
             species = "Unknown"
             cache_version=''
     }
+        script:        
      """
       source ${params.Python_env}
       report_script.py -c ${Base_annotation} -v *vep.txt

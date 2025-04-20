@@ -16,7 +16,7 @@ import numpy as np
 
 
 
-argparser = argparse.ArgumentParser(description = 'This Software is a tool to design Guiding RNA. \n This scrip allow for the filtering based on off-target activity prediction.')
+argparser = argparse.ArgumentParser(description = 'This Software is part of a tool to design Guiding RNA. \n This script allow for the filtering based on off-target activity prediction.')
 argparser.add_argument('-I','--OffTarget', metavar = 'file', dest = 'OffTarget', type = str, required = True, help = 'Off Target file')
 argparser.add_argument('-P','--PAM', metavar = 'str', dest = 'PAM', type = str, required = False, default = 'NGG', help = 'PAM to ajust CFD score if not NGG')
 argparser.add_argument('-M','--MM', metavar = 'str', dest = 'Pickle', type = str, required = False, default = '', help = 'Pickle MM matrix file location in pickle format')

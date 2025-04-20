@@ -6,7 +6,7 @@ process combine_failed {
     output:
     path "${name}_failed_CFD.csv", emit : csv, optional: true
 
-publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations", pattern: "*_CFD_failed.csv", mode: "copy"
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations", pattern: "*_CFD.csv", mode: "copy"
     script:
     """
 source ${params.Python_env}

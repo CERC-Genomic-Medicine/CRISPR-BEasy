@@ -16,7 +16,7 @@ import re
 import warnings
 
 
-parser = argparse.ArgumentParser(description='This script produce a lolipop plot (with domain/feature annotations) base on a MaGeCK, a Variant Effect Prediction file (VEP), and bed style file')
+parser = argparse.ArgumentParser(description='This script produces summary of a library design.')
 parser.add_argument('-c', '--csv', metavar='FILE', dest='csv', required=True, type=str, help='')
 parser.add_argument('-v', '--vep', metavar='FILE', dest='vep_files', required=True, type=str, nargs='+', help='tab delimited variant effect prediction file (VEP) with id corresponding to input')
 
@@ -110,7 +110,7 @@ def Base_summary(df):
     ).reset_index()
      
     # Create the range column
-    summary_df['range'] = summary_df['chrom'] + ":" + summary_df['min_POSstart'].astype(str) + "-" + summary_df['max_POSend'].astype(str)
+    summary_df['range'] = summary_df['chrom'].astype(str) + ":" + summary_df['min_POSstart'].astype(str) + "-" + summary_df['max_POSend'].astype(str)
     
     # Rename split_ID to protein
     
@@ -121,7 +121,7 @@ def Base_summary(df):
 def process_vep_summary(editor, summary_df, df_VEP, variant_consequences_mapping):
     # Step 1: Map the 'Consequence' column in df_VEP to the most damaging consequence
     if "PICK" in df_VEP.columns:
-        df_VEP=df_VEP[df_VEP['PICK']=='1']
+        df_VEP=df_VEP[df_VEP['PICK'].astype(str)=='1']
         Filter='VEP PICK'
     elif "CANONICAL" in df_VEP.columns:
         df_VEP=df_VEP[df_VEP['CANONICAL']=='YES']
