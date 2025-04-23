@@ -1,6 +1,6 @@
-id: sgRNA_library_Design_distributed_split
+id: sgRNA_library_Design
 name: 'Step I: SgRNA Library Design'
-version: 0.1a
+version: 0.2
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 workflow:
@@ -287,7 +287,7 @@ workflow:
       details : 'Accepted range: 0-10 ; blank for unfiltered'
 
     - id : CFD_Threshold
-      description : Threshold score for off-targets (CDF score) <br>  (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/" target="_blank">Details</a>)
+      description : Threshold score for off-targets (CDF score) <br>  (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#off-target-scores" target="_blank">Details</a>)
       required : false
       type : number
       details : Float number ]0-1]

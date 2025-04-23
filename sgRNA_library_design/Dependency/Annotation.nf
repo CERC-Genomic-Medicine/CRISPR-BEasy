@@ -11,9 +11,10 @@ process annotate {
 	tuple path(vcf), path(bed)
 	
 	output:
-	path("${vcf.getSimpleName()}.vep.tsv"), emit: Annotations
+	path("*.vep.tsv"), emit: Annotations
         path("*.sorted.vcf.gz"), emit: test
 
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.vep.tsv", mode: "copy"
         script:
 	def species
 	def cache_version
@@ -80,16 +81,14 @@ process annotate {
 	
 	if [ -e protein.list ] ; then
 		vep -o stdout -i ${vcf.getSimpleName()}.sorted.vcf.gz  --flag_pick_allele_gene --cache --offline -species homo_sapiens --assembly GRCh38 --format vcf --tab --force_overwrite --dir_cache /opt/vep/.vep/ --dir /opt/vep/.vep/Plugins --plugin CADD,/opt/vep/.vep/CADD_GRCh38/whole_genome_SNVs.tsv.gz,/opt/vep/.vep/CADD_GRCh38/InDels.tsv.gz --plugin CONTEXT --variant_class --sift b --polyphen b --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory --canonical --protein --biotype  --pubmed --shift_hgvs 0 --allele_number --buffer_size 10000 --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange | filter_vep --filter "SYMBOL in protein.list" -o "${vcf.getSimpleName()}_Protein.vep"
-	else
-		touch "${vcf.getSimpleName()}_Protein.vep"
-	fi
+	        awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_Protein.vep > tmp_2.tsv
+        awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_2.tsv  > ${vcf.getSimpleName()}_protein.vep.tsv
+        fi
 	if [ -e custom_regions.bed ] ; then
 		bcftools view ${vcf.getSimpleName()}.sorted.vcf.gz -R custom_regions.bed | vep -o "${vcf.getSimpleName()}_region.vep" --flag_pick --cache --offline -species homo_sapiens --assembly GRCh38 --format vcf --tab --force_overwrite --dir_cache /opt/vep/.vep/ --dir /opt/vep/.vep/Plugins --plugin CADD,/opt/vep/.vep/CADD_GRCh38/whole_genome_SNVs.tsv.gz,/opt/vep/.vep/CADD_GRCh38/InDels.tsv.gz --plugin CONTEXT --variant_class --sift b --polyphen b --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory  --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange
-	else
-		touch ${vcf.getSimpleName()}_region.vep
-	fi
-	cat "${vcf.getSimpleName()}_Protein.vep" "${vcf.getSimpleName()}_region.vep"  | awk '/^##/ {next} /^#/ && c++ {next} 1' > tmp.tsv
-	awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp.tsv > ${vcf.getSimpleName()}.vep.tsv
+	        awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_region.vep > tmp_1.tsv
+        awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_1.tsv  > ${vcf.getSimpleName()}_region.vep.tsv
+        fi
 		"""
 
 	else
@@ -102,16 +101,16 @@ process annotate {
 
         if [ -e protein.list ] ; then
                 vep -o stdout -i ${vcf.getSimpleName()}.sorted.vcf.gz  --flag_pick_allele_gene --cache --offline -species ${species} --format vcf --tab --force_overwrite --fasta /opt/vep/.genome/${params.genome}.fa ${cache_version} --dir_cache /opt/vep/.vep/ --variant_class --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory --canonical --protein --biotype --shift_hgvs 0 --allele_number --buffer_size 10000 --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange --warning_file \${editor}_vep_protein.err | filter_vep --filter "SYMBOL in protein.list" -o "${vcf.getSimpleName()}_Protein.vep"
-        else
-                touch "${vcf.getSimpleName()}_Protein.vep"
+                awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_Protein.vep > tmp_2.tsv
+                awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_2.tsv  > ${vcf.getSimpleName()}_protein.vep.tsv
         fi
         if [ -e custom_regions.bed ] ; then
                 bcftools view ${vcf.getSimpleName()}.sorted.vcf.gz -R custom_regions.bed | vep -o "${vcf.getSimpleName()}_region.vep" --flag_pick --cache --offline -species ${species} --format vcf --tab --force_overwrite --dir_cache /opt/vep/.vep/ --variant_class --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory  --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange
-        else
-                touch ${vcf.getSimpleName()}_region.vep
+                awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_region.vep > tmp_1.tsv
+                awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_1.tsv  > ${vcf.getSimpleName()}_region.vep.tsv
+
         fi
-        cat "${vcf.getSimpleName()}_Protein.vep" "${vcf.getSimpleName()}_region.vep"  | awk '/^##/ {next} /^#/ && c++ {next} 1' > tmp.tsv
-        awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp.tsv > ${vcf.getSimpleName()}.vep.tsv
-                """
+
+        """
 
 }

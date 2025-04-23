@@ -264,7 +264,7 @@
           },
         },
       });
-
+            window.jbrowseState = state;
       render(
         createElement(JBrowseLinearGenomeView, { viewState: state }),
         document.getElementById("jbrowse_linear_genome_view"),
@@ -369,7 +369,7 @@
                 var destination =
                   document.getElementById(collapseId).children[0];
                 destination.appendChild(elementToMove);
-                state.session.view.navToLocString(item["range"]);
+                window.jbrowseState.session.view.navToLocString(item["range"]);
                 var isAlreadySelected = clickedRow.hasClass("selected");
 
                 // Remove 'selected' class from any other row

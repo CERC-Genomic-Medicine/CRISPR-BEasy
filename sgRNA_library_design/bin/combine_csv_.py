@@ -9,6 +9,8 @@ def main():
                         help='List of input CSV files (tab-separated)')
     parser.add_argument('--output', required=True, metavar='BASE_NAME',
                         help='Base name for output files (without extension)')
+    parser.add_argument('-C','--cas', metavar = 'str', dest = 'Cas', type = str, help = 'CAS variant')
+
     args = parser.parse_args()
 
     # Combine CSV files
@@ -30,6 +32,16 @@ def main():
     # Output ID dictionary
     dict_df = csv_combined[['ID', 'Protein', 'start', 'strand']]
     dict_df.to_csv(f"{args.output}_id_dic.tsv", sep='\t', index=False)
+
+    if 'sgRNA_CFD_score' in csv_combined.columns :
+        if args.Cas != "SpCas9" :
+                print(f'::notice:: Rule set 3 (DeWeirdt, 2022) was developed for SpCas9. We enable scoring for all SpCas9 variants on an experimental basis.')
+                print(f'::notice:: CFD scoring was developed for SpCas9 (Doench et al., Nat Biotechnol, 2016). We enable scoring for all SpCas9 variants by adjusting the PAM mismatch penalty matrix.')
+    else :
+        print(f'::notice:: CFD scoring  (Doench et al., Nat Biotechnol, 2016) is not currently calculated for {args.Cas} since it is too different from SpCas9 (the experimental basis for CFD scoring). We enable scoring for all SpCas9 variants by adjusting the PAM mismatch penalty matrix.')
+        print(f'::notice:: Rule set 3 (DeWeirdt, 2022) is not currently calculated for {args.Cas}  since it is too different from SpCas9 (the experimental basis this scoring methodology). We enable scoring for all SpCas9 variants on an experimental basis.')
+
+
 
 if __name__ == '__main__':
     main()

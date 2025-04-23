@@ -18,7 +18,7 @@ def main():
     args = parser.parse_args()
 
     # Read and merge VEP files
-    vep_frames = [pd.read_csv(f, sep='\s+') for f in args.vep]
+    vep_frames = [pd.read_csv(f, sep='\t') for f in args.vep]
     vep_combined = pd.concat(vep_frames,ignore_index=True).drop_duplicates()
 
     # Load ID mapping
