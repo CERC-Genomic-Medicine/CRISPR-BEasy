@@ -13,7 +13,7 @@ if __name__ == '__main__':
     remove = pd.read_csv(args.remove)
     dfs = []
     for file in os.listdir(os.getcwd()):
-        if file.endswith(".vep.tsv"):
+        if file.endswith(".tsv"):
             df = pd.read_csv(file, sep='\t')
             df.loc[:,"library"] = file.split("_")[0] + "_Library"
             dfs.append(df)
