@@ -14,7 +14,6 @@ process annotate {
 	path("*.vep.tsv"), emit: Annotations
         path("*.sorted.vcf.gz"), emit: test
 
-publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*.vep.tsv", mode: "copy"
         script:
 	def species
 	def cache_version
