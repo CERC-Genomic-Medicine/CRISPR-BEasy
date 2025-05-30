@@ -6,16 +6,24 @@ PAM_to_DICT <- function(pattern) {
   
   # Define mapping from ambiguous codes to allowed nucleotides.
   mapping <- list(
-    A = c("A"),
-    T = c("T"),
-    C = c("C"),
-    G = c("G"),
-    N = c("A", "T", "C", "G"),
-    R = c("A", "G"),
-    K = c("G", "T"),
-    M = c("A", "C")
-  )
-  
+  A = c("A"),
+  C = c("C"),
+  G = c("G"),
+  T = c("T"),
+  U = c("U"),
+  R = c("A", "G"),             # purine
+  Y = c("C", "T"),             # pyrimidine
+  S = c("G", "C"),
+  W = c("A", "T"),
+  K = c("G", "T"),
+  M = c("A", "C"),
+  B = c("C", "G", "T"),
+  D = c("A", "G", "T"),
+  H = c("A", "C", "T"),
+  V = c("A", "C", "G"),
+  N = c("A", "C", "G", "T")
+)
+
   # Split the pattern into individual characters.
   pattern_chars <- unlist(strsplit(pattern, split = ""))
   

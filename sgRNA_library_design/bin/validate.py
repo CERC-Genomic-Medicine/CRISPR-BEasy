@@ -18,6 +18,7 @@ import re
 import gffutils
 import pyranges as pr
 import warnings
+from rapidfuzz import process, fuzz
 
 argparser = argparse.ArgumentParser(
     description='This software produces a bed file corresponding to the regions of interest as defined by a protein (corresponding to a genome) and the desired Feature. This represent the first step (potentially optional) in producing a library design crispr Array')
@@ -181,9 +182,10 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
     Lines = prot.readlines()
     gen_errors=[]
     fetch_error=[]
+    fetch_error_protein=[]
     returned = pd.DataFrame(columns=['Chromosome', 'Start', 'End', 'Gene'])
     if os.stat(file).st_size == 0:
-        return gen_errors, fetch_error, returned
+        return gen_errors, fetch_error, fetch_error_protein, returned
     try :
         lines = pd.read_csv(file, sep=" ", header=None)
         del lines
@@ -230,6 +232,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                         continue
                     except gffutils.exceptions.FeatureNotFoundError :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
+                        fetch_error_protein.append(protein)
                         continue
                     else :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a MANE isoform in database']
@@ -246,6 +249,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                         continue
                     except gffutils.exceptions.FeatureNotFoundError :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
+                        fetch_error_protein.append(protein)
                         continue
                     else :
                         fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a Canonical isoform in database']
@@ -257,6 +261,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                 try : q = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
                 except gffutils.exceptions.FeatureNotFoundError :
                     fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
+                    fetch_error_protein.append(protein)
                     continue
             if not args.protist:
                 for Feature in args.features:
@@ -269,7 +274,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                         returned=df
                     else:
                         returned=pd.concat([df,returned])
-    return gen_errors, fetch_error, returned
+    return gen_errors, fetch_error, fetch_error_protein, returned
 
 
 def merge_overlapping_genes(df):
@@ -350,11 +355,20 @@ if __name__ == '__main__':
             db = gffutils.create_db(args.Genome, Genome_file + '.db', id_spec={'gene': 'gene_name', 'transcript': "transcript_id"}, merge_strategy="create_unique", transform=transform_func, keep_order=True)
         except:
             raise ValueError(f'Genome freature database {args.Genome} is not in the correct format')
-    target_error, fetch_target_error, target_df = fetch_bed(args.target_file ,encode_blacklist,chromosome_ranges, db, 'Target Library')
-    positive_error , fetch_positive_error, positive_df = fetch_bed(args.positive_file,encode_blacklist,chromosome_ranges, db, 'Positive Library')
-    negative_error , fetch_negative_error, negative_df = fetch_bed(args.negative_file,encode_blacklist,chromosome_ranges, db, 'Negative Library')
-    errors = errors+ target_error + positive_error + negative_error
-    fetch_errors=fetch_errors+fetch_target_error+fetch_negative_error+fetch_positive_error
+    target_error, fetch_target_error, fetch_target_error_protein, target_df = fetch_bed(args.target_file ,encode_blacklist,chromosome_ranges, db, 'Target Library')
+    positive_error, fetch_positive_error, fetch_positive_error_protein, positive_df = fetch_bed(args.positive_file,encode_blacklist,chromosome_ranges, db, 'Positive Library')
+    negative_error, fetch_negative_error, fetch_negative_error_protein, negative_df = fetch_bed(args.negative_file,encode_blacklist,chromosome_ranges, db, 'Negative Library')
+    errors = errors + target_error + positive_error + negative_error
+    fetch_errors = fetch_errors + fetch_target_error + fetch_negative_error + fetch_positive_error
+    fetch_errors_protein = fetch_target_error_protein + fetch_positive_error + fetch_negative_error
+    if fetch_errors_protein :
+        reference_list = [i.id for i in db.features_of_type("gene")]
+        suggestion_list = [
+        f'{target} -> {process.extractOne(target, reference_list, scorer=fuzz.ratio)[0]}'
+        for target in fetch_errors_protein
+        ]
+        with open('suggestion.err', 'w') as file:
+            file.write('\n'.join(suggestion_list))
     if fetch_errors :
         with open('fetch.err', 'w') as file:
             file.write('\n'.join(fetch_errors))

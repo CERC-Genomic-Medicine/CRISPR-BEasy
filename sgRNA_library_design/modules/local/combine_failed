@@ -9,7 +9,7 @@ process combine_failed {
 publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations", pattern: "*_CFD.csv", mode: "copy"
     script:
     """
-source ${params.Python_env}
-combine_fail.py --csv ${csvs} --output ${name}_failed_CFD.csv
-"""
+       source ${params.Python_env}
+       combine_fail.py --csv ${csvs} --output ${name}_failed_CFD.csv
+    """
 }

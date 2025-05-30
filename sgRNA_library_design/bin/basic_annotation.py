@@ -78,6 +78,7 @@ if __name__ == '__main__':
                 position= pr.PyRanges(df)
                 names=[i for i in position.join(bed).Name]
                 if len(set(names))>1:
+                        print("::error:: One protein overlaps with another. This is not allowed due to collision in the interpretation downstream")
                         raise Exception('One protein overlaps with anoter.')
                 else :
                         protein.extend(list(set(names)))

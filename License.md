@@ -1,10 +1,7 @@
-All code used in this repository is under the MIT license (see blow), the underlying code for the CRISPOR option is under the [CRISPOR specific license](https://github.com/maximilianh/crisporWebsite/blob/master/LICENSE.txt).
-To use without any restriction simply remove this option.
+All code used in this repository is under the MIT license (see blow). Additionnally, we wish to acknowledge the integral role of the CRISPRverse package (Hoberecht et al. 2022)[https://www.nature.com/articles/s41467-022-34320-7] and the Ensembl Variant Effect Predictor in this version of the sgRNA_library_design tool.
 
 
 MIT license : 
-
-
 
 Copyright 2025 CERC-Genomic-Medicine
 
