@@ -385,7 +385,7 @@ bowtie_index <- file.path("${params.index_dir}", "${params.genome}")
 guideSet <- addSpacerAlignments(guideSet,
                                 aligner_index=bowtie_index,
                                 bsgenome=bsgenome,
-                                n_mismatches=3,
+                                n_mismatches=3
                                 )
 
 aln_df=mcols(alignments(guideSet))

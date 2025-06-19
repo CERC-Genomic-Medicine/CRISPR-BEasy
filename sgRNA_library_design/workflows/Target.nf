@@ -30,6 +30,7 @@ main:
   Combine_csv = combine_general(target_BA.CSV.collect(), 'Study_Target_library') 
 Combine_fail = combine_failed(target_crispr.failed.collect(),  'Study_Target_library')
   vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]), 'Study_Target_library', Combine_csv.ID_dic)
+  target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]).view()
   vep = combine_annotations(target_A.Annotations.flatten().map( file -> [file.getBaseName().tokenize('_')[4], file]).groupTuple(by: [0]), 'Study_Target_library', Combine_csv.ID_dic)
   output=to_excel(Combine_csv.csv, vep.tsv.collect(), 'Target_Library.xlsx')
   outputCSV=Combine_csv.csv

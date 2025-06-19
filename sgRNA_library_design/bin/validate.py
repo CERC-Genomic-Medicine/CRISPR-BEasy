@@ -219,7 +219,7 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
                 df['Gene'] = protein
                 returned=pd.concat([df,returned])
             elif args.isoform == 'MANE':
-                if args.genome != 'hg38':
+                if args.Genome != 'hg38':
                     fetch_error = fetch_error + ['Only hg38 assembly possess MANE annotations']
                     break
                 try : q=[f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0]) if 'tag' in f.attributes.keys() and 'MANE_Select' in f.attributes['tag']]
