@@ -53,11 +53,8 @@ Channel
 CFD_file_ch.view()
   //parallele
   Target_bed = split_bed(target_bed)
-  target_crispr = CRISPRverse(Target_bed.bed_chunks.flatten())
   target_crispr = CRISPRverse(Target_bed.bed_chunks.flatten(),  BSgenome_ch, CFD_file_ch, bowtie_index_folder_ch)
   Scored = OnTarget(target_crispr.crispr_base, target_crispr.aln)
-  target_BA = Basic_Annotation( Scored.scored.combine(target_bed ), editors )
-  target_A = annotate( target_BA.VCF.flatten().combine(target_bed) )  
   
   input_target = Scored.scored
     .combine(target_bed)
@@ -76,11 +73,20 @@ CFD_file_ch.view()
 
   }
   //Reunify
+<<<<<<< Updated upstream
   Combine_csv = combine_general(target_BA.CSV.collect(), 'Study_Target_library') 
 Combine_fail = combine_failed(target_crispr.failed.collect(),  'Study_Target_library')
   vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]), 'Study_Target_library', Combine_csv.ID_dic)
   vep = combine_annotations(target_A.Annotations.flatten().map( file -> [file.getBaseName().tokenize('_')[4], file]).groupTuple(by: [0]), 'Study_Target_library', Combine_csv.ID_dic)
   output=to_excel(Combine_csv.csv, vep.tsv.collect(), 'Target_Library.xlsx')
+=======
+  Combine_csv = combine_general(target_BA.CSV.collect(), name_output.map { it + '_library' }) 
+Combine_fail = combine_failed(target_crispr.failed.collect(),  name_output.map { it + '_library' })
+  vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]), name_output.map { it + '_library' } , Combine_csv.ID_dic)
+  target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]).view()
+  vep = combine_annotations(target_A.Annotations.flatten().map( file -> [file.getBaseName().tokenize('_')[4], file]).groupTuple(by: [0]), name_output.map { it + '_library' }, Combine_csv.ID_dic)
+  output=to_excel(Combine_csv.csv, vep.tsv.collect(), name_output.map { it + '_library' })
+>>>>>>> Stashed changes
   outputCSV=Combine_csv.csv
   outputVEP=vep.tsv
 emit:
