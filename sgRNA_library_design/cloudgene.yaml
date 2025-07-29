@@ -1,12 +1,6 @@
-<<<<<<< Updated upstream
-id: sgRNA_library_Design_dev
-name: 'Step I: SgRNA Library Design'
-version: 0.3
-=======
 id: sgRNA_library_Design_DEV
 name: 'Step I: SgRNA Library Design DEV'
 version: 0.4
->>>>>>> Stashed changes
 release: experimental
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
