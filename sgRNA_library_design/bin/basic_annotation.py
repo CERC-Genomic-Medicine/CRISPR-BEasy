@@ -146,13 +146,8 @@ if __name__ == '__main__':
         if not args.Editor == None :
                 for index, i in editor.iterrows() :
                         editor_df=scoreGuides.copy()
-<<<<<<< Updated upstream
-                        i.window_start=i.window_start
-                        i.window_end=i.window_end
-                        editor_df['editing_windowSTART']=[editor_df['start'][j]-args.length+i.window_start-1 if '+' in editor_df.strand[j] else editor_df['start'][j] +len(editor_df.protospacer[j])-i.window_end for j in editor_df.index]
-=======
                         editor_df['editing_windowSTART']=[editor_df['start'][j]+i.window_start-1 if '+' in editor_df.strand[j] else editor_df['end'][j] -i.window_end+1 for j in editor_df.index]
->>>>>>> Stashed changes
+
                         editor_df['editing_windowEND']=editor_df['editing_windowSTART'] + (i.window_end-i.window_start)
                         editor_df[['editing_windowSeq', 'editing_window_mutated']] = editor_df.apply(lambda row: MutateWindow(row,i), axis=1).apply(pd.Series)
                         editor_df['MutationFullWindow']=editor_df['editing_windowSeq'].astype(str) +'/'+ editor_df['editing_window_mutated'].astype(str)
