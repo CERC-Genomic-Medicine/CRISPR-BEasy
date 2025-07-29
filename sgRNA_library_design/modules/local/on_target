@@ -11,7 +11,12 @@ label "OnTarget"
 
 """
 source ${params.Python_env}
-onTarget.py -I ${data} -C ${params.casName} -A ${aling}  -O ${data.getSimpleName()}
+
+if [[ ${params.CFD_access} ]]; then
+        onTarget.py -I ${data} --CFD -A ${aling}  -O ${data.getSimpleName()}
+else
+        onTarget.py -I ${data} -A ${aling}  -O ${data.getSimpleName()}
+fi
 
     """
 }

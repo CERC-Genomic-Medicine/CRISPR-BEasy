@@ -1,6 +1,12 @@
+<<<<<<< Updated upstream
 id: sgRNA_library_Design_dev
 name: 'Step I: SgRNA Library Design'
 version: 0.3
+=======
+id: sgRNA_library_Design_DEV
+name: 'Step I: SgRNA Library Design DEV'
+version: 0.4
+>>>>>>> Stashed changes
 release: experimental
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
@@ -13,7 +19,8 @@ workflow:
       script : main.nf
       params:
         project: "${CLOUDGENE_JOB_NAME}"
-        protein_id : "${protein_id}"
+        Genome_Json: "${genomic_dataset.database_url}"
+        Target_genes : "${Target_genes}"
 
       groups :
         - id : "Validation"
@@ -180,30 +187,19 @@ workflow:
 
   inputs:
 
-    - id : protein_id
+    - id : Target_genes
       description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>)
       type: textarea
       required : true
       details: 'A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls).'
 
-    - id : genome
+    - id: genomic_dataset
       description : Genome Build <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-do-i-request-a-new-genome" target="_blank">Missing your genome ?</a>)
+      type: dataset
       required : true
-      type : list
-      value : 'hg38'
-      values :
-        hg38 : 'Homo sapiens - hg38'
-        mm39 : 'Mus musculus - mm39'
-        GRCg7b : 'Gallus Gallus - bGalGal1.mat.broiler.GRCg7b'
-        ASM584v2 : 'Escherichia coli - ASM584v2'
-        TAIR10 : 'Arabidopsis Thaliana - TAIR10'
-        mRatBN7.2 : 'Rattus norvegicus - mRatBN7.2'
-        WBCel235 : ' Caenorhabditis elegans - WBCel235'
-        R64_1_1 : 'Saccharomyces cerevisiae - R64'
-        BDGP_6 : 'Drosophila melanogaster - dm6'
-        GRCz11 : 'Danio Rerio - GRCz11'
-        ASM294v2 : 'Schizosaccharomyces pombe - ASM294v2'
-        CHOK1S_HDv1 : 'Chinese Hamster Ovary cell line - CHOK1S_HDv1'
+      category: genomic_database
+      value : apps@WBcel235@114
+      serialize: false
 
     - id : isoform
       description : "Isoform to select"
@@ -215,7 +211,7 @@ workflow:
         Canonical: Canonical
         None: All isoform
 
-    - id : border
+    - id : Flanking
       description : 'Flanking regions (bp) :'
       required : false
       details : "Number [0-100]"
@@ -225,7 +221,7 @@ workflow:
     - id: myseparator
       type: separator
 
-    - id : casName
+    - id : cas_Name
       description : Cas variant <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#cas-variant-available" target="_blank">Details</a>)
       required : true
       type : list
@@ -302,22 +298,11 @@ workflow:
       type : text
       details : 'Gene feature possible includes : gene, CDS (default), mRNA, exon, five_prime_UTR, three_prime_UTR, rRNA, tRNA, ncRNA, tmRNA, transcript, mobile_genetic_element, origin_of_replication, promoter and repeat_region \n ** Only applies to Protein and not custom regions'
 
-    - id : Consequence_choice
-      description : 'VEP pick basis'
-      required : false
-      value : 'pick' 
-      type : list
-      visible : false
-      values :
-        pick : "Ensembl pick"
-        canonical : "canonical"
-        mane : "mane"
-      details : 'If there is more than one predicted consequence (e.g. isoforms), on which basis should they be reported'
 
     - id: myseparator
       type: separator
 
-    - id : protein_Pos 
+    - id : Positive_genes 
       description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       type: textarea
       details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
@@ -326,7 +311,7 @@ workflow:
     - id: myseparator
       type: separator
 
-    - id : protein_Neg
+    - id : Negative_genes
       description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
       type: textarea

@@ -11,6 +11,6 @@ publishDir "${params.Auxiliary_files}/${params.Library_Type}/Basic_Annotations",
     script:
     """
     source ${params.Python_env}
-    combine_csv_.py --csv *.csv --output ${name} -C ${params.casName}
+    combine_csv_.py --csv *.csv --output ${name} -C ${params.cas_Name}
     """
 }

@@ -5,6 +5,7 @@ process split_bed {
     output:
     path "chunk*.bed", emit : bed_chunks
 
+<<<<<<< Updated upstream
 def pam
 def divider
     switch (params.casName) {
@@ -106,10 +107,16 @@ def divider
         pam='NNN'
         break
 }
+=======
+>>>>>>> Stashed changes
 
 
  script:
     """
+<<<<<<< Updated upstream
     split_bed.py ${bed_file} --bp_limit ${params.soft_bp_limit} --overlap 30
+=======
+    split_bed.py ${bed_file} --bp_limit ${params.soft_bp_limit} --overlap 30 --divider 1
+>>>>>>> Stashed changes
     """
 }
