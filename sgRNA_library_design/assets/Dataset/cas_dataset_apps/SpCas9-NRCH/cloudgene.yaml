@@ -1,0 +1,6 @@
+id: SpCas9-NRCH
+name: 20 bp - NRCH - SpCas9-NRCH
+version: 0.0
+category: cas_database
+properties:
+  database_url: ${CLOUDGENE_APP_LOCATION}/SpCas9-NRCH.json

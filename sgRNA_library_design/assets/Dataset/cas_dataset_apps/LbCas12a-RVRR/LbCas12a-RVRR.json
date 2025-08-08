@@ -1,0 +1,9 @@
+{
+  "LbCas12a-RVRR": {
+    "pam":       "RVRR",
+    "length":    23,
+    "CFD_access":"false",
+    "Pam_side":  "3prime",
+    "rs3_access":"false"
+  }
+}

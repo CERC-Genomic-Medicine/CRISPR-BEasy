@@ -1,0 +1,41 @@
+process annotate_tar {
+	label "VEP"
+
+	cache "lenient"
+        scratch true
+	cpus 1
+
+	input:
+	tuple path(vcf), path(bed),path(fasta), path(index_fasta)
+        each path(tar)
+	
+	output:
+	path("*.vep.tsv"), emit: Annotations
+        path("*.sorted.vcf.gz"), emit: test
+        path("*.err"), optional : true
+
+
+publishDir "${params.Auxiliary_files}/Genomic_regions/", pattern: "*.err", mode: "copy"
+        script:
+		"""
+	tar -xzvf ${tar}
+        editor="${vcf.simpleName.tokenize('_')[4]}"
+        awk '{if (\$4 ~ /^custom/) {print > "custom_regions.bed"} else {print \$4 > "protein.list"}}' ${bed}
+        export PERL5LIB=/opt/vep/.vep/Plugins/:\${PERL5LIB:-}
+        bcftools sort ${vcf} -Oz -o ${vcf.getSimpleName()}.sorted.vcf.gz
+        tabix -p vcf ${vcf.getSimpleName()}.sorted.vcf.gz
+
+        if [ -e protein.list ] ; then
+                vep -o stdout -i ${vcf.getSimpleName()}.sorted.vcf.gz  --flag_pick_allele_gene --cache --offline -species ${params.name} --format vcf --tab --force_overwrite --fasta ${fasta} --cache_version ${params.release} --dir_cache . --variant_class --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory --canonical --protein --biotype --shift_hgvs 0 --allele_number --buffer_size 10000 --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange --warning_file \${editor}_vep_protein.err | filter_vep --filter "SYMBOL in protein.list" -o "${vcf.getSimpleName()}_Protein.vep"
+                awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_Protein.vep > tmp_2.tsv
+                awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_2.tsv  > ${vcf.getSimpleName()}_protein.vep.tsv
+        fi
+        if [ -e custom_regions.bed ] ; then
+                bcftools view ${vcf.getSimpleName()}.sorted.vcf.gz -R custom_regions.bed | vep -o "${vcf.getSimpleName()}_region.vep" --flag_pick --cache --offline --fasta ${fasta} -species ${params.name} --format vcf --tab --force_overwrite --canonical --protein --cache_version ${params.release}  --dir_cache . --uniprot --shift_hgvs 0 --variant_class --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory  --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange
+                awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_region.vep > tmp_1.tsv
+                awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_1.tsv  > ${vcf.getSimpleName()}_region.vep.tsv
+
+        fi
+               """
+
+}

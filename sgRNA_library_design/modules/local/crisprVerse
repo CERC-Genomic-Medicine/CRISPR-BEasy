@@ -3,6 +3,10 @@ label "CRISPRverse"
 
 input:
     path(bedfile)
+    path(bsgenome)
+    path(CFD_files)
+    path(bowtie_index)
+
 
     output:
     path("${bedfile.getSimpleName()}.txt"), emit : crispr_base
@@ -13,54 +17,12 @@ input:
 
 // publishDir "${params.Auxiliary_files}/Crispr/", pattern: "*_aln.txt", mode: "copy"
         script:
-// Defined genomes with bsgenome name with format
-        def bsgenome
-    switch (params.genome) {
-        case "hg38":
-            bsgenome = "BSgenome.Hsapiens.UCSC.hg38"
-            break
-        case "mm39":
-            bsgenome = "BSgenome.Mmusculus.UCSC.mm39"
-            break
-        case "TAIR10":
-            bsgenome='BSgenome.Athaliana.NA.TAIR10'
-            break
-        case "CHOK1S_HDv1":
-            bsgenome='BSgenome.Cgriseus.NCBI.CHOK1SHDv1'
-            break
-        case "ASM584v2":
-            bsgenome='BSgenome.Ecoli.NA.ASM584v2'
-            break
-        case "GRCg7b":
-            bsgenome='BSgenome.Ggallus.NA.GRCg7b'
-            break
-        case "mRatBN7.2":
-            bsgenome='BSgenome.Rnorvegicus.NA.mRat'
-            break
-        case "WBCel235" :
-            bsgenome='BSgenome.Celegans.NA.WBCel235'
-            break
-        case "R64_1_1" :
-            bsgenome='BSgenome.Scerevisiae.NA.R64'
-            break
-        case "BDGP_6" :
-            bsgenome='BSgenome.Dmelanogaster.NA.BDGP6'
-            break
-        case "GRCz11":
-            bsgenome='BSgenome.Drerio.NA.GRCz11'
-            break
-        case "ASM294v2" :
-            bsgenome='BSgenome.Spombe.NA.ASM294v2'
-            break
-        default:
-            bsgenome = "Unknown"
 
-        }
-              
+
 // By default $params.CFD_Threshold and $params.CFD_Count can be null and the transfert to R is more Rocky
 def No_CFD = "F"
 def CFD_C = 0
-def CFD_T = 0
+def CFD_T = 1
 if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
     No_CFD = "T"
 } else {
@@ -68,399 +30,196 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
     CFD_T = params.CFD_Threshold
 }
 
-// Define Cas property (to be beautified)
-def pam
-def length
-def pamLength
-    switch (params.casName) {
-    case "SpCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-NG":
-        pam = "NGN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-NRRH":
-        pam = "NRRH"
-        length = 20
-        pamLength = 4
-        break
-    case "SpCas9-NRTH":
-        pam = "NRTH"
-        length = 20
-        pamLength = 4
-        break
-    case "SpCas9-NRCH":
-        pam = "NRCH"
-        length = 20
-        pamLength = 4
-        break
-    case "SpCas9(VQR/VRQR)":
-        pam = "NGA"
-        length = 20
-        pamLength = 3
-        break
-    case "xCas9":
-        pam = "NGN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpG":
-        pam = "NGN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpRY":
-        pam = "NNN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-CP1012":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-CP1028":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-CP1041":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-1249":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-(HF1/HF2)":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "eSpCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "HypaCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "Sniper-Cas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "evoCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "ScCas9":
-        pam = "NNG"
-        length = 20
-        pamLength = 3
-        break
-    case "ScCas9+":
-        pam = "NNG"
-        length = 20
-        pamLength = 3
-        break
-    case "Spymac":
-        pam = "NAA"
-        length = 20
-        pamLength = 3
-        break
-    case "iSpymac":
-        pam = "NAA"
-        length = 20
-        pamLength = 3
-        break
-    case "SaCas9":
-        pam = "NNGRRT"
-        length = 22
-        pamLength = 6
-        break
-    case "SaCas9-KKH":
-        pam = "NNNRRT"
-        length = 22
-        pamLength = 6
-        break
-    case "St1Cas9-LMD9":
-        pam = "NNRGAA"
-        length = 22
-        pamLength = 6
-        break
-    case "SauriCas9":
-        pam = "NNGG"
-        length = 22
-        pamLength = 4
-        break
-    case "CjCas9":
-        pam = "NNNNNRYAC"
-        length = 22
-        pamLength = 9
-        break
-    case "LbCas12a":
-        pam = "TTTV"
-        length = 23
-        pamLength = 4
-        break
-    case "LbCas12a-RVRR":
-        pam = "RVRR"
-        length = 23
-        pamLength = 4
-        break
-    case "AsCas12a":
-        pam = "TTTV"
-        length = 23
-        pamLength = 4
-        break
-    case "enAsCas12a":
-        pam = "TTNN"
-        length = 23
-        pamLength = 4
-        break
-    default:
-        pam = "Unknown"
-        length = 0
-        pamLength = 0    
-}
 
 
     """
-#!/usr/bin/env Rscript
-unixtools::set.tempdir("${params.R_temporary_dir}")
-library(crisprDesign)
-library(Rbowtie)
-library(Biostrings)
-library(crisprScore)
-library(${bsgenome})
-library(dplyr)
-library(tibble)
-bsgenome=${bsgenome}
+    
+        #!/usr/bin/env Rscript
+        unixtools::set.tempdir("${params.R_temporary_dir}")
+        library(crisprDesign)
+        library(Rbowtie)
+        library(Biostrings)
+        library(crisprScore)
+        library(dplyr)
+        library(tibble)
 
-getExtendedSequences <- function(guideSet,
-                                  start,
-                                  end
-){    
-    gr <- guideSet
-    wh_neg <- which(as.character(strand(gr))=="-")
-    # The order of resizing IRanges matters
-    # to presever the validity of a positive width.
-    if (start>0 & end>0){
-        end(gr)   <- end(guideSet)+end
-        start(gr) <- start(guideSet)+start
-        start(gr)[wh_neg] <- start(guideSet)[wh_neg]-end
-        end(gr)[wh_neg]   <- end(guideSet)[wh_neg]-start
-    } else {
-        start(gr) <- start(guideSet)+start
-        end(gr)   <- end(guideSet)+end
-        end(gr)[wh_neg]   <- end(guideSet)[wh_neg]-start
-        start(gr)[wh_neg] <- start(guideSet)[wh_neg]-end
-    }
-
-    gr <- GenomicRanges::trim(gr) #Taking care of invalid values
-
-
-
-    good <- which(as.character(strand(gr)) %in% c("+", "-"))
-    out <- rep(NA_character_, length(gr))
-    names(out) <- names(gr)
-    if (length(good)==0){
-        return(out)
-    } 
-    if (targetOrigin(guideSet)=="customSequences"){
-        seqs <- getSeq(customSequences(guideSet),gr[good])
-    } else {
-        seqs <- getSeq(bsgenome(guideSet), gr[good])
-    }
-    seqs <- as.character(seqs)
-
-    #Making sure the sequences are not out of bound:
-    len <- end-start+1 # Expected length
-    seqs[seqs==""] <- NA
-    seqs[nchar(seqs)<len] <- NA
-    out[good] <- seqs
-    return(out)
-}
-
-runBowtie <- function(sequences,
-                      bowtie_index,
-                      bsgenome=NULL,
-                      n_mismatches=0,
-                      all_alignments=TRUE,
-                      n_max_alignments=1000,
-                      verbose=TRUE
-){
-    .checkNMismatches(n_mismatches)
-    .checkBSGenomeOrNull(bsgenome)
-    # Note: bowtie is based on python,
-    # so index is 0-based instead of 1-based
-    sequences <- unique(sequences)
-    if (is.null(bowtie_index)){
-        stop("bowtie_index must be provided.")
-    }
-    bowtie_index <- .validateBowtieIndex(bowtie_index)
-
-
-    input <- .fastafy(sequences,
-                      temporary=TRUE)
-    outfile <- tempfile(tmpdir= "${params.R_temporary_dir}")  ### ADDITION
-    results <- bowtie(sequences=input,
-                      type="single",
-                      index=bowtie_index,
-                      outfile=outfile,
-                      f=TRUE,
-                      v=n_mismatches,
-                      a=all_alignments,
-                      k=crisprBase:::.makeLongInteger(n_max_alignments),
-                      force=TRUE)
-    results <- .readBowtieResults(outfile)
-
-
-
-    if (file.exists(input)){
-        file.remove(input)
-    }
-    if (length(results)==0){
-        return(NULL)
-    }
-
-    if (is.null(bsgenome)){
-        results <- .getDNATargetFromMismatches(results, sequences)
-    } else {
-        results <- .getDNATargetFromBSgenome(results, bsgenome)
-    }
-
-    # Cleaning up:
-    cols <- c("query", "target",
-              "chr", "pos", "strand",
-              "n_mismatches")
-    results <- results[, cols, drop=FALSE]
-    results <- results[order(results\$query,
-                             results\$target,
-                             results\$chr,
-                             results\$pos,
-                             results\$strand,
-                             results\$n_mismatches),,drop=FALSE]
-    rownames(results) <- NULL
-    return(results)
-}
-
-
-nuc <- CrisprNuclease("${params.casName}",
-                         targetType="DNA",
-                         pams=c("(${pamLength}/${pamLength})${pam}"),
-                         weights=c(1),
-                         metadata=list(description="Nuclease"),
-                         pam_side="3prime",
-                         spacer_length=as.numeric("${length}"))
-
-df1 <- read.table("${bedfile}", sep = "\t")
-
-Gr <-GRanges(seqnames = Rle(c(df1\$V1)),
-        ranges = IRanges(start = c(df1\$V2),
-                             end = c(df1\$V3)), strand='+', names=c(df1\$V4))
-
-#Finding Spacers
-guideSet <- findSpacers(Gr,
-                        bsgenome=bsgenome,
-                        crisprNuclease=nuc)
-
-
-#More info
-guideSet <- addSequenceFeatures(guideSet)
-
-
-#Alignement
-bowtie_index <- file.path("${params.index_dir}", "${params.genome}")
-guideSet <- addSpacerAlignments(guideSet,
-                                aligner_index=bowtie_index,
-                                bsgenome=bsgenome,
-                                n_mismatches=3
-                                )
-
-aln_df=mcols(alignments(guideSet))
-
-print(head(aln_df))
-if ( "${length}"=="20" ){
-if ("${params.casName}" == "SpCas9") {
-     scores_cfd <- crisprScore::getCFDScores(spacers=as.character(aln_df\$spacer),
-                                               protospacers=as.character(aln_df\$protospacer),
-                                               pams=as.character(aln_df\$pam))
-     scores_cfd=scores_cfd\$score
-} else {
-     load(paste0("${params.CFD_files}", '/sysdata.rda'))
-     source(paste0("${params.CFD_files}", "/CFD_alt.R"))   
-        MM_score <- cfd.mm.weights.cas9
-        PAM_MM <- PAM_to_DICT("${pam}")
-        scores_cfd <- getCFDScores_ALT_cas9(
-          as.character(aln_df\$spacer),
-          as.character(aln_df\$protospacer),
-          as.character(aln_df\$pam),
-          PAM_MM,
-          MM_score
+        install.packages(
+        "$bsgenome",
+        repos   = NULL,
+        type    = "source",
+        lib     = "."
         )
-}
-if ( "${No_CFD}" != "T" ){
-#Convert to dataframe easier to work with
-guideDF = GuideSet2DataFrames(guideSet)
-guideDF = guideDF\$primary
-#Define the self aligned
-#Withdraw selfaligned
-aln_df['CFD_score'] = as.numeric(scores_cfd)
-#Filter Threshold
-aln_df_filt = aln_df[unlist(aln_df\$CFD_score) >= ${CFD_T},]
-count_pass = table(row.names(aln_df_filt)) <= ${CFD_C} + 1 ## self align
-pass_names = rownames(count_pass[count_pass])
-filtered_guideSet = guideSet[pass_names,]
-fail_names = names(count_pass[!count_pass])
-# Filter guideSet to only those that passed
-filtered_guideSet = guideSet[pass_names,]
-fail_guideSet = guideSet[fail_names,]
-df_F = GuideSet2DataFrames(fail_guideSet)
-Fail_Guides_df = df_F\$primary
-write.table(Fail_Guides_df, row.names = FALSE, quote=FALSE, sep='\t', file="${bedfile.getSimpleName()}_failed.txt")
-#CDF_Calc for sgRNA
-aln_df <- as.data.frame(aln_df)
-aln_df['CFD_score'] <- aln_df['CFD_score']*100
-df_G = GuideSet2DataFrames(filtered_guideSet)
-Guides_df = df_G\$primary
-} else {
-head(aln_df)
-aln_df['CFD_score'] = as.numeric(scores_cfd)
-filtered_guideSet = guideSet
-df_G = GuideSet2DataFrames(filtered_guideSet)
-Guides_df = df_G\$primary
-}
-} else {
-# IF not CFD calc possible
-filtered_guideSet = guideSet
-df_G = GuideSet2DataFrames(filtered_guideSet)
-Guides_df = df_G\$primary
-}
+        bsgenome_dirs <- list.dirs(path = ".", full.names = TRUE, recursive = FALSE)
+        bsgenome_name <- bsgenome_dirs[grepl("BSgenome", bsgenome_dirs)]
+        files <- list.files(path = ".", full.names = TRUE, recursive = TRUE)
+        print(files)
+        print(files[grepl(".1.ebwt", files)])
+        print(files[grepl("*ebwt", files)])
+        prefix_index <- sub(".1.ebwt", "", files[grepl("ebwt", files)][1])
+        print(prefix_index)
+        print('::message:: loaded')
+        print(bsgenome_name)
 
-# Output
-write.table(aln_df, row.names = FALSE, quote=FALSE, sep='\t', file="${bedfile.getSimpleName()}_aln.txt")
-if ( ("${pamLength}"=="3") && ("${length}"=="20") ) {
-        extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
-} else {
-        extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
-}
+        library(basename(bsgenome_name), lib.loc = ".", character.only = TRUE)
+        bsgenome <- get(basename(bsgenome_name))
+        print(basename(bsgenome_name))
+        chunksize  <- ${params.crispr_chunksize}
 
-Guides_df['ContextSequence'] = getExtendedSequences(filtered_guideSet,-31,7)
-colnames(Guides_df)[4] = "Chromosome"
-colnames(Guides_df)[8] = "PAM"
-Guides_df['ExtendedSqueuence']=extSeqs
-Guides_df <- subset(Guides_df, select = -region)
-write.table(Guides_df, row.names = FALSE, quote=FALSE, sep='\t', file="${bedfile.getSimpleName()}.txt")
-"""
+
+
+        getExtendedSequences <- function(guideSet,
+                                          start,
+                                          end
+        ){
+            gr <- guideSet
+            wh_neg <- which(as.character(strand(gr))=="-")
+            # The order of resizing IRanges matters
+            # to presever the validity of a positive width.
+            if (start>0 & end>0){
+                end(gr)   <- end(guideSet)+end
+                start(gr) <- start(guideSet)+start
+                start(gr)[wh_neg] <- start(guideSet)[wh_neg]-end
+                end(gr)[wh_neg]   <- end(guideSet)[wh_neg]-start
+            } else {
+                start(gr) <- start(guideSet)+start
+                end(gr)   <- end(guideSet)+end
+                end(gr)[wh_neg]   <- end(guideSet)[wh_neg]-start
+                start(gr)[wh_neg] <- start(guideSet)[wh_neg]-end
+            }
+
+            gr <- GenomicRanges::trim(gr) #Taking care of invalid values
+
+
+
+            good <- which(as.character(strand(gr)) %in% c("+", "-"))
+            out <- rep(NA_character_, length(gr))
+            names(out) <- names(gr)
+            if (length(good)==0){
+                return(out)
+            }
+            if (targetOrigin(guideSet)=="customSequences"){
+                seqs <- getSeq(customSequences(guideSet),gr[good])
+            } else {
+                seqs <- getSeq(bsgenome(guideSet), gr[good])
+            }
+            seqs <- as.character(seqs)
+
+            #Making sure the sequences are not out of bound:
+            len <- end-start+1 # Expected length
+            seqs[seqs==""] <- NA
+            seqs[nchar(seqs)<len] <- NA
+            out[good] <- seqs
+            return(out)
+        }
+
+        pamLength <- nchar("${params.pam}")
+        crisprNuclease <- CrisprNuclease("${params.casName}",
+                                 targetType="DNA",
+                                 pams=c(paste0("(",pamLength,"/",pamLength,")","${params.pam}")),
+                                 weights=c(1),
+                                 metadata=list(description="Nuclease"),
+                                 pam_side="${params.Pam_side}",
+                                 spacer_length=as.numeric("${params.length}"))
+
+
+        df1 <- read.table("${bedfile}", sep = "\t")
+
+        Gr <-GRanges(seqnames = Rle(c(df1\$V1)),
+                ranges = IRanges(start = c(df1\$V2),
+                                     end = c(df1\$V3)), strand='+', names=c(df1\$V4))
+
+        #Finding Spacers
+        guideSet <- findSpacers(Gr,
+                                bsgenome=bsgenome,
+                                crisprNuclease=crisprNuclease)
+
+
+        #More info
+        guideSet <- addSequenceFeatures(guideSet)
+
+        print(paste0("total number of guides " , as.character(length(spacers(guideSet, as.character=TRUE)))))
+
+        load(paste0("${CFD_files}", '/sysdata.rda'))
+        source(paste0("${CFD_files}", "/CFD_alt.R"))
+        MM_score <- cfd.mm.weights.cas9
+        PAM_MM <- PAM_to_DICT("${params.pam}")
+
+
+        #Alignement
+        chunks <- split(guideSet,ceiling(seq_along(guideSet) / chunksize))
+        for (i in seq_along(chunks)) {
+                                print(paste0('::message:: Processing Chunk # ', as.character(i)))
+                                guideSet_iter <- chunks[[i]]
+                                guideSet_iter <- addSpacerAlignmentsIterative(guideSet_iter,
+                                        aligner_index=prefix_index,
+                                        bsgenome=bsgenome,
+                                        n_mismatches=3,
+                                        alignmentThresholds=c(n0=10,
+                                                 n1=100,
+                                                 n2=1000,
+                                                 n3=1000))
+                                aln_df=mcols(alignments(guideSet_iter))
+                                if ( "${params.CFD_access}" == "true"){
+                                        if ("${params.casName}" == "SpCas9") {
+                                             print(paste0('::message:: SPcas9 detected'))
+                                             scores_cfd <- crisprScore::getCFDScores(spacers=as.character(aln_df\$spacer),
+                                                                                       protospacers=as.character(aln_df\$protospacer),
+                                                                                       pams=as.character(aln_df\$pam))
+                                              scores_cfd <- scores_cfd[, 3] 
+                                        } else {
+                                          scores_cfd <- getCFDScores_ALT_cas9(
+                                          as.character(aln_df\$spacer),
+                                          as.character(aln_df\$protospacer),
+                                          as.character(aln_df\$pam),
+                                          PAM_MM,
+                                          MM_score
+                                        )
+                                        }
+                                        #Convert to dataframe easier to work with
+                                        guideDF = GuideSet2DataFrames(guideSet_iter)
+                                        guideDF = guideDF\$primary
+                                        #Define the self aligned
+                                        #Withdraw selfaligned
+                                        print(scores_cfd)
+                                        aln_df['CFD_score'] = as.numeric(unlist(scores_cfd))
+                                        #Filter Threshold
+                                        if ( "${No_CFD}" == 'F' ) {
+                                                aln_df_filt = aln_df[unlist(aln_df\$CFD_score) >= ${CFD_T},]
+                                                count_pass = table(row.names(aln_df_filt)) <= ${CFD_T} + 1 ## self align
+                                                pass_names = rownames(count_pass[count_pass])
+                                                filtered_guideSet = guideSet_iter[pass_names,]
+                                                fail_names = names(count_pass[!count_pass])
+                                                # Filter guideSet_iter to only those that passed
+                                                filtered_guideSet = guideSet_iter[pass_names,]
+                                                fail_guideSet = guideSet_iter[fail_names,]
+                                                df_F = GuideSet2DataFrames(fail_guideSet)
+                                                Fail_Guides_df = df_F\$primary
+                                                write.table(Fail_Guides_df, row.names = FALSE, quote=FALSE, sep='\t', file=paste0("${bedfile.getSimpleName()}","_failed.txt"),  col.names= !file.exists(paste0("${bedfile.getSimpleName()}","_failed.txt")), append   = !(i==1))
+                                                #CDF_Calc for sgRNA
+                                        } else {
+                                        filtered_guideSet=guideSet_iter
+                                        }
+                                        aln_df <- as.data.frame(aln_df)
+                                        aln_df['CFD_score'] <- aln_df['CFD_score']*100
+                                        df_G = GuideSet2DataFrames(filtered_guideSet)
+                                        Guides_df = df_G\$primary
+                                }
+
+
+
+                                # Output
+                                extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
+                                Guides_df['ContextSequence'] = getExtendedSequences(filtered_guideSet,-31,7)
+                                colnames(Guides_df)[4] = "Chromosome"
+                                colnames(Guides_df)[8] = "PAM"
+                                Guides_df['ExtendedSqueuence']=extSeqs
+                                Guides_df <- subset(Guides_df, select = -region)
+                                write.table(Guides_df, row.names = FALSE, quote=FALSE,   col.names= !file.exists(paste0("${bedfile.getSimpleName()}",".txt")),
+                                                  append   = !(i==1), sep='\t', file=paste0("${bedfile.getSimpleName()}",".txt"))
+
+                                write.table(aln_df, row.names = FALSE, quote=FALSE, sep='\t', file=paste0("${bedfile.getSimpleName()}","_aln.txt"),col.names= !file.exists(paste0("${bedfile.getSimpleName()}","_aln.txt")), append   = !(i==1))
+        }
+
+
+    """
 }

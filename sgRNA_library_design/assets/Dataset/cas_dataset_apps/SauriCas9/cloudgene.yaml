@@ -1,0 +1,6 @@
+id: SauriCas9
+name: 22 bp - NNGG - SauriCas9
+version: 0.0
+category: cas_database
+properties:
+  database_url: ${CLOUDGENE_APP_LOCATION}/SauriCas9.json

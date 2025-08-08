@@ -1,0 +1,6 @@
+id: SpCas9-NG
+name: 20 bp - NGN - SpCas9-NG
+version: 0.0
+category: cas_database
+properties:
+  database_url: ${CLOUDGENE_APP_LOCATION}/SpCas9-NG.json

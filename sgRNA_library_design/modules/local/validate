@@ -5,6 +5,9 @@ input:
     path(positive, stageAs: 'positive.txt')
     path(negative, stageAs: 'negative.txt')
     path(editors)
+    path(gff_database)
+    path(fasta_index)
+    path(boyle)
 
     output:
     path("Study_Target_library.bed"), emit: target_bed
@@ -36,187 +39,6 @@ else {
     }
 }
 
-def pam
-def length
-def pamLength
-switch (params.casName) {
-    case "SpCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-NG":
-        pam = "NGN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-NRRH":
-        pam = "NRRH"
-        length = 20
-        pamLength = 4
-        break
-    case "SpCas9-NRTH":
-        pam = "NRTH"
-        length = 20
-        pamLength = 4
-        break
-    case "SpCas9-NRCH":
-        pam = "NRCH"
-        length = 20
-        pamLength = 4
-        break
-    case "SpCas9(VQR/VRQR)":
-        pam = "NGA"
-        length = 20
-        pamLength = 3
-        break
-    case "xCas9":
-        pam = "NGN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpG":
-        pam = "NGN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpRY":
-        pam = "NNN"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-CP1012":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-CP1028":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-CP1041":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-1249":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "SpCas9-(HF1/HF2)":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "eSpCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "HypaCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "Sniper-Cas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "evoCas9":
-        pam = "NGG"
-        length = 20
-        pamLength = 3
-        break
-    case "ScCas9":
-        pam = "NNG"
-        length = 20
-        pamLength = 3
-        break
-    case "ScCas9+":
-        pam = "NNG"
-        length = 20
-        pamLength = 3
-        break
-    case "Spymac":
-        pam = "NAA"
-        length = 20
-        pamLength = 3
-        break
-    case "iSpymac":
-        pam = "NAA"
-        length = 20
-        pamLength = 3
-        break
-    case "SaCas9":
-        pam = "NNGRRT"
-        length = 22
-        pamLength = 6
-        break
-    case "SaCas9-KKH":
-        pam = "NNNRRT"
-        length = 22
-        pamLength = 6
-        break
-    case "St1Cas9-LMD9":
-        pam = "NNRGAA"
-        length = 22
-        pamLength = 6
-        break
-    case "SauriCas9":
-        pam = "NNGG"
-        length = 22
-        pamLength = 4
-        break
-    case "CjCas9":
-        pam = "NNNNNRYAC"
-        length = 22
-        pamLength = 9
-        break
-    case "LbCas12a":
-        pam = "TTTV"
-        length = 23
-        pamLength = 4
-        break
-    case "LbCas12a-RVRR":
-        pam = "RVRR"
-        length = 23
-        pamLength = 4
-        break
-    case "AsCas12a":
-        pam = "TTTV"
-        length = 23
-        pamLength = 4
-        break
-    case "enAsCas12a":
-        pam = "TTNN"
-        length = 23
-        pamLength = 4
-        break
-    default:
-        pam = "Unknown"
-        length = 0
-        pamLength = 0
-}
-
-def Protist
-
-switch ("$params.genome") {
-    case "R64_1_1":
-        Protist = ""
-        break
-    case "ASM294v3":
-        Protist = "--protist"
-        break
-    case "ASM584v2":
-        Protist = "--protist"
-        break
-    default :
-        Protist = ""
-}
-
     """
     #!/usr/bin/env bash
     source ${params.Python_env}
@@ -224,7 +46,7 @@ switch ("$params.genome") {
     good_array=()
 
     good_array+=("<LI> Parameter Genome : ${params.genome}")
-    good_array+=("<LI> Parameter Flanking Region : ${params.border} bp (bases to consider on each side of the selected gene feature)")
+    good_array+=("<LI> Parameter Flanking Region : ${params.Flanking} bp (bases to consider on each side of the selected gene feature)")
     good_array+=("<LI> Parameter Cas9 Orthologue : ${params.casName}")
     good_array+=("<LI> Parameter Gene Feature : ${params.feature} (feature to be investigated)")
     if [ "${params.isoform}" == "MANE" ]; then
@@ -238,7 +60,7 @@ switch ("$params.genome") {
     fi
     good_array+=("<LI> Parameter GC : ${params.GC} (C within GC pattern will not be mutated in mutation prediction if specified)")
 
-if [ "${length}" == "20" ] ; then
+if [ ${params.CFD_access} ] ; then
 if [ ${No_CFD} == "T" ] ; then
     good_array+=("<LI> sgRNA will not be filtered by off-target (CFD Count or Threshold is not set)")
 else
@@ -251,15 +73,15 @@ else
 good_array+=('<LI> Parameter Count Threshold: guides with more than ${params.CFD_Count} off-targets of score >= ${params.CFD_Threshold} are filtered')
 fi
 else
-  good_array+=("<LI> CFD can not be calculated (length is not equal to spCas9)")
+  good_array+=("<LI> CFD cannot be calculated")
 fi
+if [ -n "${params.Boyle_Lab}" ] ; then
+        boyler="-e ${boyle}"
+fi
+ls -lh ${boyle}
 
-   if [ -e ${params.Gen_pipeline_data}/genomes/${params.genome}_encode.bed ]; then
-	encode='-e ${params.Gen_pipeline_data}/genomes/${params.genome}_encode.bed'
-   else
-        encode=''
-   fi
-    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.db -o out.bed -B ${params.border} -F ${params.feature} -c ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.sizes \$encode --editors ${editors} ${Protist} -L ${params.limit_bp}
+    awk '!seen[\$2]++ {print \$1"\\t"\$2}' $fasta_index > fasta.sizes
+    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${gff_database} -o out.bed -B ${params.Flanking} -F ${params.feature} -c fasta.sizes \${boyler} --editors ${editors} -L ${params.limit_bp}
    
    if [ -e errors.err ]; then
     mapfile -t new_lines < "errors.err"

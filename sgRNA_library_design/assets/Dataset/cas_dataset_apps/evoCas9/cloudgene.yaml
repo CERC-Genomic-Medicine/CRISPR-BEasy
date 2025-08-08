@@ -1,0 +1,6 @@
+id: evoCas9
+name: 20 bp - NGG - evoCas9
+version: 0.0
+category: cas_database
+properties:
+  database_url: ${CLOUDGENE_APP_LOCATION}/evoCas9.json

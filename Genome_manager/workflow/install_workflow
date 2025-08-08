@@ -1,0 +1,23 @@
+
+include { install_assembly_ensembl } from '../modules/local/install'
+include { RBSname } from '../modules/local/install'
+include { bowtie } from '../modules/local/install'
+include { unTARvep } from '../modules/local/install'
+include { make_cloudgene } from '../modules/local/cloudgene'
+
+
+workflow install_workflow {
+take :
+   assembly
+main:
+
+install_ch = install_assembly_ensembl(assembly)
+bowtie = bowtie(install_ch.Output_non_vep)
+rBS=RBSname(install_ch.Output_non_vep)
+tar=unTARvep(install_ch.vep_to_untar)
+
+cloudgene_ready = install_ch.location_json.combine(bowtie.OK).combine(rBS.OK)
+
+emit:
+   cloudgene_ready
+}
