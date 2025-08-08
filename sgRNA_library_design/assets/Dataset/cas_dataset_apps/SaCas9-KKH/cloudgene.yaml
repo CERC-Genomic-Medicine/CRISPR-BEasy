@@ -1,6 +1,0 @@
-id: SaCas9-KKH
-name: 22 bp - NNNRRT - SaCas9-KKH
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/SaCas9-KKH.json

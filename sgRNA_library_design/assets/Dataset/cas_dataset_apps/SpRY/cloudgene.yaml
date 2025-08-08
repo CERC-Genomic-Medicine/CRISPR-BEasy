@@ -1,6 +1,0 @@
-id: SpRY
-name: 20 bp - NNN - SpRY
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/SpRY.json

@@ -1,6 +1,0 @@
-id: enAsCas12a
-name: 23 bp - TTNN - enAsCas12a
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/enAsCas12a.json

@@ -1,6 +1,0 @@
-id: CjCas9
-name: 22 bp - NNNNNRYAC - CjCas9
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/CjCas9.json

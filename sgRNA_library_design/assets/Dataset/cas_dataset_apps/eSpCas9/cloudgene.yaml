@@ -1,6 +1,0 @@
-id: eSpCas9
-name: 20 bp - NGG - eSpCas9
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/eSpCas9.json

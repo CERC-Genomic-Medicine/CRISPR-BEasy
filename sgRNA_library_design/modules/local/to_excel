@@ -13,6 +13,6 @@ publishDir "${params.Libraries}/", pattern: "*.xlsx", mode: "copy"
       """
 source ${params.Python_env}
 
-to_excel.py --vep ${vep} --csv ${Base_annotation} --out ${output}.xlsx
+to_excel.py --vep ${vep} --csv ${Base_annotation} --out ${output}
       """
 }

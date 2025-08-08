@@ -1,6 +1,0 @@
-id: AsCas12a
-name: 23 bp - TTTV - AsCas12a
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/AsCas12a.json

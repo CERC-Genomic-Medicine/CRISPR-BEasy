@@ -1,6 +1,0 @@
-id: SpCas9-CP1028
-name: 20 bp - NGG - SpCas9-CP1028
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/SpCas9-CP1028.json

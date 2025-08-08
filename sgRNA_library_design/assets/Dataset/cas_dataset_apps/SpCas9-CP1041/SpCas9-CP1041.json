@@ -1,9 +1,0 @@
-{
-  "SpCas9-CP1041": {
-    "pam":       "NGG",
-    "length":    20,
-    "CFD_access":"true",
-    "Pam_side":  "3prime",
-    "rs3_access":"true"
-  }
-}
