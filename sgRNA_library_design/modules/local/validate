@@ -8,11 +8,9 @@ input:
     path(gff_database)
     path(fasta_index)
     path(boyle)
-    path(Dust_ch)
-    path(repeatmasker_ch)
 
     output:
-    path("Study_Target_library.bed"), emit: target_bed  , optional: true
+    path("Study_Target_library.bed"), emit: target_bed
     path("Positive_Controls_library.bed"), emit: positive_bed , optional: true
     path("Negative_Controls_library.bed"), emit: negative_bed , optional: true
     path("*.err"), emit: errors , optional: true
@@ -49,7 +47,7 @@ else {
 
     good_array+=("<LI> Parameter Genome : ${params.genome}")
     good_array+=("<LI> Parameter Flanking Region : ${params.Flanking} bp (bases to consider on each side of the selected gene feature)")
-    good_array+=("<LI> Parameter Cas9 Orthologue : ${params.cas_Name}")
+    good_array+=("<LI> Parameter Cas9 Orthologue : ${params.casName}")
     good_array+=("<LI> Parameter Gene Feature : ${params.feature} (feature to be investigated)")
     if [ "${params.isoform}" == "MANE" ]; then
       good_array+=("<LI> Parameter isoform : MANE (Isoform analysed will correspond to the MANE project)")
@@ -109,21 +107,6 @@ ls -lh ${boyle}
       done
       echo "\n"
       echo "::endgroup::"
-      if [ -e suggestion.err ]; then
-        mapfile -t new_lines < "suggestion.err"
-        sugession=("\${new_lines[@]}")
-        echo "::group type=error::"
-        echo "<b> Based on the genes not found in the database we think these are similar : </b>"
-        echo "<UL>"
-        for t in "\${sugession[@]}"; do
-                 echo "<LI>\${t}"
-        done
-        echo "</UL>"
-        echo "* These suggestion are purely based on character similarity (thus have strong limitation) "
-        echo " You can find the full list of genes availlable in the chosen database at https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt"
-        echo "\n"
-        echo "::endgroup::"
-      fi
       exit 3
     elif [ -e editors.err ]; then
       echo "::group type=error::"

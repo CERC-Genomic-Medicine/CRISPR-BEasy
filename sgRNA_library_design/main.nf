@@ -3,7 +3,6 @@ import groovy.json.JsonSlurper
 import JsonUtils
 import ParamDocs
 import ParamUtils
-println('load Params')
 
 params.configFile=file("./nextflow.config")
 
@@ -59,10 +58,9 @@ if (params.Errors == null) {
 
 def paramDescriptions = ParamDocs.getParamDescriptions() // Get parameter descriptions
 // ==================================== Documentation & Loading params ==========================//
-println("$CLOUDGENE_USER_EMAIL")
 if (CLOUDGENE_WORKSPACE_TYPE ) {
 //------------------- Run Cloudgene ------------//
-                def Required_parameters = ['Genome_Json','Cas_Variant_Json', 'cas_Name', 'Python_env', 'R_temporary_dir', 'Target_genes', 'isoform', 'GC', 'Flanking', 'Editors', 'feature', 'VEP_sif']
+                def Required_parameters = ['Genome_Json','Cas_Variant_Json', 'Python_env', 'R_temporary_dir', 'Target_genes', 'isoform', 'GC', 'Flanking', 'Editors', 'feature', 'VEP_sif']
                 def Ignored_parameters = ['send_mail',"project","remove_empty","output","outdir","Libraries","Auxiliary_files","Report_output","Report_ancillary","Errors","Library_Type","configFile","config-file","pubDir","pub-dir"]
                 def optional_parameters = ['R_temporary_dir', 'Positive_genes', 'Negative_genes','CFD_Threshold', 'CFD_Count','limit_bp','soft_bp_limit','CFD_files','crispr_chunksize']
                 def pipelineDesc = "This pipeline helps design guide RNA for base editing based on genes/custom regions. \n Usage of this version should be restricted to cloudgene_backend"
@@ -78,13 +76,13 @@ if (CLOUDGENE_WORKSPACE_TYPE ) {
                         )
                 def asmParams = JsonUtils.loadAssemblyParams(params.Genome_Json, null)
                 params.putAll(asmParams)
-                def casParams = JsonUtils.loadCasVariant(params.Cas_Variant_Json, params.cas_Name)
+                def casParams = JsonUtils.loadCasVariant(params.Cas_Variant_Json, null)
                 params.putAll(casParams)
 } else {
 //---------------------------- Run locally -----------//
-                def Required_parameters = ['update_genomes']
-                def Ignored_parameters = ['send_mail']
-                def optional_parameters = ['Python_env','R_temporary_dir','Genome_Json','cloudgene_exe', 'cloudgene','crispr_chunksize']
+                def Required_parameters = ['Genome_Json','Cas_Variant_Json', 'Python_env', 'R_temporary_dir', 'Target_genes', 'isoform', 'GC', 'Flanking', 'Editors', 'feature', 'VEP_sif']
+                def Ignored_parameters = ['send_mail','genome','cas_Name',"output","outdir","Libraries","Auxiliary_files","Report_output","Report_ancillary","Errors","Library_Type","configFile","config-file","pubDir","pub-dir"]
+                def optional_parameters = ['Python_env','R_temporary_dir','Positive_genes', 'Negative_genes','CFD_Threshold', 'CFD_Count','limit_bp','soft_bp_limit','CFD_files','crispr_chunksize']
                 def pipelineDesc = "This pipeline helps design guide RNA for base editing based on genes/custom regions. \n Usage : nextflow main.nf --Genome <value> [--Genome_Json <value> ] --Editors <value> --cas_Name <value> [--Cas_Variant_Json <value>] --Target_genes <value> [--Positive_genes <value>] [--Negative_genes <value>] [--feature_type <value>] [--Isoform <value>] [--GC <value>] [--Flanking <value>] [--CFD_Theshold <value> --CFD_count <value>] [--CFD_files <value>] [--VEP_sif <value>] \n"
                 ParamUtils.validateExactParamSet(
                 // Validate the presence/absence of optional/Requiered/illegal parameters and produce custom errors
@@ -103,10 +101,6 @@ if (CLOUDGENE_WORKSPACE_TYPE ) {
 
 }
 
-println('load params')
-//params.each { key, value ->
-//    println "${key} = ${value}"
-//}
 
 
 // ----------------------- Load Process and workflow -------------------------//
@@ -118,13 +112,11 @@ include { Crispr_Target_library_prep as Crispr_Positive_library_prep } from './w
 include { Finalization } from './workflows/Combine.nf'
 
 
-println('include')
 //============================================ Main Workflow ==================================//
 workflow {
 
 //------------------------- Load Files ---------------------//
 
-println("${CLOUDGENE_USER_EMAIL}")
 // Targets //
 Target_name = Channel.value('Study_Target')
 Channel
@@ -220,44 +212,9 @@ Channel
     }
     .set { boyle_ch }
 
-// Dust Repeat //
-Channel
-    .from(params.Dust_repeat ?: "")
-    .map { content ->
-        def path = content.toString()
-        def inputFile = new File(path)
-
-        if (inputFile.exists()) {
-            return inputFile.path  // Use the existing file
-        }
-
-        def file = new File("${workflow.workDir}/Dust_${params.project}.bed.gz")
-        file.text = ""  // Write string or leave empty
-        return file.path
-    }
-    .set { Dust_ch }
-
-// Repeat Masker
-Channel
-    .from(params.repeatmasker ?: "")
-    .map { content ->
-        def path = content.toString()
-        def inputFile = new File(path)
-
-        if (inputFile.exists()) {
-            return inputFile.path  // Use the existing file
-        }
-
-        def file = new File("${workflow.workDir}/repeatmasker_${params.project}.bed.gz")
-        file.text = ""  // Write string or leave empty
-        return file.path
-    }
-    .set { repeatmasker_ch }
-
-
 // ------------------------------ Process ----------------------------------//
 
-       valid = Validate(Target_ch, Positive_ch, Negative_ch, Editors_file, GFF_database, fasta_database, boyle_ch, Dust_ch, repeatmasker_ch)
+       valid = Validate(Target_ch, Positive_ch, Negative_ch, Editors_file, GFF_database, fasta_database, boyle_ch)
         Crispr_Target_library_prep( valid.target_bed, Editors_file, Target_name )
        out_CSV = Crispr_Target_library_prep.out.CSV
        out_VEP = Crispr_Target_library_prep.out.VEP
@@ -290,7 +247,7 @@ workflow.onComplete {
     System.setProperty("mail.smtp.user", SMTP_USER)
     System.setProperty("mail.smtp.password", SMTP_PASS)
 
-    println(user_email)
+    println(CLOUDGENE_SERVICE_URL)
     //job failed
     if (!workflow.success) {
         def statusMessage = workflow.exitStatus != null ? "failed" : "canceled"

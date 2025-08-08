@@ -22,8 +22,8 @@ PAM_to_DICT <- function(pattern) {
   H = c("A", "C", "T"),
   V = c("A", "C", "G"),
   N = c("A", "C", "G", "T")
-)
-
+  )
+  
   # Split the pattern into individual characters.
   pattern_chars <- unlist(strsplit(pattern, split = ""))
   

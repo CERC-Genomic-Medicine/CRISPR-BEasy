@@ -118,16 +118,6 @@
               },
             },
           },
-          aliases: ["{{genome}}"],
-          refNameAliases: {
-            adapter: {
-              type: "RefNameAliasAdapter",
-              location: {
-                uri: "https://cerc-genomic-medicine.ca/Data/{{genome}}_alias.txt",
-                locationType: "UriLocation",
-              },
-            },
-          },
         },
         tracks: [
           {

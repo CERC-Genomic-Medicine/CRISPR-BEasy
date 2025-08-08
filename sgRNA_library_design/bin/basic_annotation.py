@@ -30,7 +30,6 @@ argparser.add_argument('-n','--Name', metavar = 'string', dest = 'Name', type = 
 argparser.add_argument('-X','--exclude', metavar = 'file', dest = 'excludes', type = str, required = False, default ='', help = 'List of Guides to exclude')
 argparser.add_argument('-V','--Per_Variant', dest = 'per_variant', action='store_true', help = 'flag to produce a per variant VCF suitable for VEP')
 argparser.add_argument('-R','--Per_sgRNA', dest = 'per_guide', action='store_true', help = 'flag to produce a per guide vcf file suitable for VEP')
-argparser.add_argument('-L','--length', metavar = 'int', dest = 'length', type = int, required = False, default =20, help = 'length of the GuideRNA without PAM')
 argparser.add_argument('-B','--bed', metavar = 'file', dest = 'bed', type = str, required = True, help = 'bedFile protein per region')
 argparser.add_argument('--gc', dest = 'gc', action='store_true', required = False, help = 'flag not Consider C in GC as affected')
 argparser.add_argument('-G','--Genome', metavar = 'file', dest = 'Genome_file', type = str, required = True, help = 'Genome fasta file')
@@ -103,7 +102,6 @@ if __name__ == '__main__':
                 position= pr.PyRanges(df)
                 names=[i for i in position.join(bed).Name]
                 if len(set(names))>1:
-                        print("::error:: One protein overlaps with another. This is not allowed due to collision in the interpretation downstream")
                         raise Exception('One protein overlaps with anoter.')
                 else :
                         protein.extend(list(set(names)))
@@ -147,7 +145,6 @@ if __name__ == '__main__':
                 for index, i in editor.iterrows() :
                         editor_df=scoreGuides.copy()
                         editor_df['editing_windowSTART']=[editor_df['start'][j]+i.window_start-1 if '+' in editor_df.strand[j] else editor_df['end'][j] -i.window_end+1 for j in editor_df.index]
-
                         editor_df['editing_windowEND']=editor_df['editing_windowSTART'] + (i.window_end-i.window_start)
                         editor_df[['editing_windowSeq', 'editing_window_mutated']] = editor_df.apply(lambda row: MutateWindow(row,i), axis=1).apply(pd.Series)
                         editor_df['MutationFullWindow']=editor_df['editing_windowSeq'].astype(str) +'/'+ editor_df['editing_window_mutated'].astype(str)

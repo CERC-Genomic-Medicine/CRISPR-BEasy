@@ -46,6 +46,7 @@ class JsonUtils {
 
     static Map loadCasVariant(String casVariantJsonPath, String casName) {
         def casDb = new JsonSlurper().parse(new File(casVariantJsonPath))
+        if (!casName) casName = casDb.keySet().first()
         def entry = casDb[casName]
         if (!entry) {
             def available = casDb.keySet().join(', ')
@@ -53,10 +54,12 @@ class JsonUtils {
                     "Invalid casName '${casName}'. Available: ${available}")
         }
         return [
+            casName   : casName,
             pam        : entry.pam,
             length     : entry.length,
-            pamLength  : entry.pamLength,
-            CFD_access : entry.CFD_access
+            CFD_access : entry.CFD_access,
+            rs3_access : entry.rs3_access,
+            Pam_side : entry.Pam_side,
         ]
     }
 }

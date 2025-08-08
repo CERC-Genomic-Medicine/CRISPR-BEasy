@@ -17,28 +17,6 @@ process annotate_tar {
 
 publishDir "${params.Auxiliary_files}/Genomic_regions/", pattern: "*.err", mode: "copy"
         script:
-	if (params.genome == "GRCh38")
-		"""
-	tar -xzvf ${tar}
-        editor="${vcf.simpleName.tokenize('_')[4]}"
-	awk '{if (\$4 ~ /^custom/) {print > "custom_regions.bed"} else {print \$4 > "protein.list"}}' ${bed}
-	export PERL5LIB=/opt/vep/.vep/Plugins/:\${PERL5LIB:-}
-	bcftools sort ${vcf} -Oz -o ${vcf.getSimpleName()}.sorted.vcf.gz
-        tabix -p vcf ${vcf.getSimpleName()}.sorted.vcf.gz
-	
-	if [ -e protein.list ] ; then
-		vep -o stdout -i ${vcf.getSimpleName()}.sorted.vcf.gz  --flag_pick_allele_gene --cache --offline -species homo_sapiens --assembly GRCh38 --format vcf --tab --force_overwrite --dir_cache ./{params.genome} --dir ./${params.genome}/Plugins --plugin CADD,./${params.genome}/CADD_GRCh38/whole_genome_SNVs.tsv.gz,./${params.genome}/CADD_GRCh38/InDels.tsv.gz --plugin CONTEXT --variant_class --sift b --polyphen b --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory --canonical --protein --biotype  --pubmed --shift_hgvs 0 --allele_number --buffer_size 10000 --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange | filter_vep --filter "SYMBOL in protein.list" -o "${vcf.getSimpleName()}_Protein.vep"
-	        awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_Protein.vep > tmp_2.tsv
-        awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_2.tsv  > ${vcf.getSimpleName()}_protein.vep.tsv
-        fi
-	if [ -e custom_regions.bed ] ; then
-		bcftools view ${vcf.getSimpleName()}.sorted.vcf.gz -R custom_regions.bed | vep -o "${vcf.getSimpleName()}_region.vep" --flag_pick --cache --offline -species homo_sapiens --assembly GRCh38 --format vcf --tab --force_overwrite --dir_cache ./${params.genome} --dir ./${params.genome}/Plugins --plugin CADD,./${params.genome}/CADD_GRCh38/whole_genome_SNVs.tsv.gz,./${params.genome}/CADD_GRCh38/InDels.tsv.gz --plugin CONTEXT --variant_class --sift b --polyphen b --nearest gene --gene_phenotype --ccds --uniprot --hgvs --symbol --numbers --domains --regulatory  --custom ${vcf.getSimpleName()}.sorted.vcf.gz,\$editor,vcf,exact,0,Protospacer,PAM,Nchange
-	        awk '/^##/ {next} /^#/ && c++ {next} 1' ${vcf.getSimpleName()}_region.vep > tmp_1.tsv
-        awk -v value=\$editor 'BEGIN {OFS="\t"} NR==1 {\$0 = \$0 OFS "editor"} NR>1 {\$0 = \$0 OFS value} 1' tmp_1.tsv  > ${vcf.getSimpleName()}_region.vep.tsv
-        fi
-		"""
-
-	else
 		"""
 	tar -xzvf ${tar}
         editor="${vcf.simpleName.tokenize('_')[4]}"

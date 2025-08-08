@@ -1,0 +1,6 @@
+id: ScCas9
+name: 20 bp - NNG - ScCas9
+version: 0.0
+category: cas_database
+properties:
+  database_url: ${CLOUDGENE_APP_LOCATION}/ScCas9.json

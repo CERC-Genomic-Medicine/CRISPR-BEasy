@@ -29,12 +29,6 @@
     "pamLength": 4,
     "CFD_access" : true
   },
-  "SpCas9(VQR/VRQR)": {
-    "pam": "NGA",
-    "length": 20,
-    "pamLength": 3,
-    "CFD_access" : true
-  },
   "xCas9": {
     "pam": "NGN",
     "length": 20,
@@ -72,12 +66,6 @@
     "CFD_access" : true
   },
   "SpCas9-1249": {
-    "pam": "NGG",
-    "length": 20,
-    "pamLength": 3,
-    "CFD_access" : true
-  },
-  "SpCas9-(HF1/HF2)": {
     "pam": "NGG",
     "length": 20,
     "pamLength": 3,

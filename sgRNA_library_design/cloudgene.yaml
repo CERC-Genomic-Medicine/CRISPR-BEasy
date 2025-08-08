@@ -14,6 +14,7 @@ workflow:
       params:
         project: "${CLOUDGENE_JOB_NAME}"
         Genome_Json: "${genomic_dataset.database_url}"
+        Cas_Variant_Json: "${cas_dataset.database_url}"
         Target_genes : "${Target_genes}"
 
       groups :
@@ -192,7 +193,7 @@ workflow:
       type: dataset
       required : true
       category: genomic_database
-      value : apps@WBcel235@114
+      value : apps@GRCh38@114
       serialize: false
 
     - id : isoform
@@ -215,43 +216,13 @@ workflow:
     - id: myseparator
       type: separator
 
-    - id : cas_Name
+    - id : cas_dataset
       description : Cas variant <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#cas-variant-available" target="_blank">Details</a>)
       required : true
-      type : list
-      value : 'SpCas9'
-      values :
-        SpCas9 : "20 bp - NGG - SpCas9"
-        SpCas9-NG : "20 bp - NG - SpCas9-NG"
-        SpCas9-NRRH : "20 bp - NRRH - SpCas9-NRRH"
-        SpCas9-NRTH : "20 bp - NRTH - SpCas9-NRTH"
-        SpCas9-NRCH : "20 bp - NRCH - SpCas9-NRCH"
-        SpCas9(VQR/VRQR) : "20 bp - NGA - SpCas9(VQR/VRQR)"
-        xCas9 : "20 bp - NG - xCas9"
-        SpG : "20 bp - NG - SpG"
-        SpRY : "20 bp - NNN - SpRY"
-        SpCas9-CP1012 : "20 bp - NGG - SpCas9-CP1012"
-        SpCas9-CP1028 : "20 bp - NGG - SpCas9-CP1028"
-        SpCas9-CP1041 : "20 bp - NGG - SpCas9-CP1041"
-        SpCas9-1249 : "20 bp - NGG - SpCas9-1249"
-        SpCas9-(HF1/HF2) : "20 bp - NGG - SpCas9-(HF1/HF2)"
-        eSpCas9 : "20 bp - NGG - eSpCas9"
-        HypaCas9 : "20 bp - NGG - HypaCas9"
-        Sniper-Cas9 : "20 bp - NGG - Sniper-Cas9"
-        evoCas9 : "20 bp - NGG - evoCas9"
-        ScCas9 : "20 bp - NNG - ScCas9"
-        ScCas9+ : "20 bp - NNG - ScCas9+"
-        Spymac : "20 bp - NAA - Spymac"
-        iSpymac : "20 bp - NAA - iSpymac"
-        SaCas9 : "22 bp - NNGRRT - SaCas9"
-        SaCas9-KKH : "22 bp - NNNRRT - SaCas9-KKH"
-        St1Cas9-LMD9 : "22 bp - NNRGAA - St1Cas9-LMD9"
-        SauriCas9 : "22 bp - NNGG - SauriCas9"
-        CjCas9 : "NNNNNRYAC - CjCas9"
-        LbCas12a : "23 bp - TTTV - LbCas12a"
-        LbCas12a-RVRR : "23 bp - RVRR - LbCas12a-RVRR"
-        AsCas12a : "23 bp - TTTV - AsCas12a"
-        enAsCas12a : "23 bp - TTNN - enAsCas12a"
+      type : dataset
+      category : cas_database
+      value : apps@SpCas9@0.0
+      serialize: false
 
     - id : Editors
       description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#editors" target="_blank">Details</a>)

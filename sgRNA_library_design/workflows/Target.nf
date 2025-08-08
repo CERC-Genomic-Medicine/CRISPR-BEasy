@@ -34,13 +34,11 @@ Channel
     .fromPath(params.bsgenome_loc)
     .set { BSgenome_ch }
 
-println(params.bowtie_index_loc)
 
 def BowtiedirPath = new File(params.bowtie_index_loc).getParent()
 Channel
     .fromPath("${BowtiedirPath}", type: 'dir')
     .set { bowtie_index_folder_ch }
-bowtie_index_folder_ch.view()
 // Fasta (derived from Genome) //
 Channel
     .fromPath(params.fasta_loc)
@@ -50,7 +48,6 @@ Channel
 Channel
     .fromPath("${params.CFD_files}", type: 'dir')
     .set { CFD_file_ch }
-CFD_file_ch.view()
   //parallele
   Target_bed = split_bed(target_bed)
   target_crispr = CRISPRverse(Target_bed.bed_chunks.flatten(),  BSgenome_ch, CFD_file_ch, bowtie_index_folder_ch)
@@ -58,12 +55,8 @@ CFD_file_ch.view()
   
   input_target = Scored.scored
     .combine(target_bed)
-  input_target.cross(fasta_database_ch).view()
-  input_target.combine(fasta_database_ch).view()
   target_BA = Basic_Annotation( input_target.combine(fasta_database_ch), editors )
   vcfs = target_BA.VCF.flatten().combine(target_bed)
-  vcfs.view()
-  fasta_database_ch.view()
   if (!params.vep_cache_loc.endsWith('.tar.gz')) {
         target_A = annotate(vcfs.combine(fasta_database_ch))
   } else {
@@ -76,7 +69,6 @@ CFD_file_ch.view()
   Combine_csv = combine_general(target_BA.CSV.collect(), name_output.map { it + '_library' }) 
 Combine_fail = combine_failed(target_crispr.failed.collect(),  name_output.map { it + '_library' })
   vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]), name_output.map { it + '_library' } , Combine_csv.ID_dic)
-  target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]).view()
   vep = combine_annotations(target_A.Annotations.flatten().map( file -> [file.getBaseName().tokenize('_')[4], file]).groupTuple(by: [0]), name_output.map { it + '_library' }, Combine_csv.ID_dic)
   output=to_excel(Combine_csv.csv, vep.tsv.collect(), name_output.map { it + '_library' })
   outputCSV=Combine_csv.csv

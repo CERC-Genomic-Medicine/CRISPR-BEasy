@@ -9,6 +9,6 @@ process split_bed {
 
  script:
     """
-    split_bed.py ${bed_file} --bp_limit ${params.soft_bp_limit} --overlap 30
+    split_bed.py ${bed_file} --bp_limit ${params.soft_bp_limit} --overlap 30 --divider 1
     """
 }

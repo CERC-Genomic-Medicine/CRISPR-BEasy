@@ -13,6 +13,11 @@ process report {
  publishDir "${params.Report_output}/ancillary_files/", pattern: "*.json", mode: "copy"
  publishDir "${params.Report_output}/", pattern: "*.html", mode: "copy"
 
+script :
+
+def FastaUrl_Mod = params.fasta_url
+    .replace('/dna/',         '/dna_index/')
+    .replace('primary_assembly','toplevel')
      """
       source ${params.Python_env}
       report_script.py -c ${Base_annotation} -v *vep.txt
@@ -20,6 +25,6 @@ process report {
       samtools sort temp.bam -o sgRNA_location.bam
       rm temp.bam
       samtools index sgRNA_location.bam
-      render_report.py --template ${projectDir}/assets/report_templates/report_template.txt --genome ${params.genome} --fasta_url "${params.fasta_url}" --fasta_index_url "${params.fasta_url}.fai" --fasta_gz_gzi "${params.fasta_url}.gzi" --gff3_url "${params.gff3_url}" --output report.html
+      render_report.py --template ${projectDir}/assets/report_templates/report_template.txt --genome ${params.genome} --fasta_url "${FastaUrl_Mod}" --fasta_index_url "${FastaUrl_Mod}.fai" --fasta_gz_gzi "${FastaUrl_Mod}.gzi" --gff3_url "${params.gff3_url}" --output report.html
       """
 }

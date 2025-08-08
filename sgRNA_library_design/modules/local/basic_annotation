@@ -20,7 +20,7 @@ awk '{print "##contig=<ID="\$1",length="\$2">"}' ${fasta_index} > header_contigs
     else
      GC_flag=''
     fi
-    basic_annotation.py  --Editor ${editors} -B ${bed} -S ${score} -L ${params.pamLength} -R  \${GC_flag} -n ${score.getSimpleName().split('_')[1]} -O ${score.getSimpleName()} --head header_contigs.txt
+    basic_annotation.py  --Editor ${editors} -B ${bed} -S ${score} -R  \${GC_flag} -n ${score.getSimpleName().split('_')[1]} -O ${score.getSimpleName()} --head header_contigs.txt
         for vcf in *.vcf ;
         do
                 bcftools view \$vcf -Oz -o "\$vcf".gz

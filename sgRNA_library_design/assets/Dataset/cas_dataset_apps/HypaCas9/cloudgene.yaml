@@ -1,0 +1,6 @@
+id: HypaCas9
+name: 20 bp - NGG - HypaCas9
+version: 0.0
+category: cas_database
+properties:
+  database_url: ${CLOUDGENE_APP_LOCATION}/HypaCas9.json
