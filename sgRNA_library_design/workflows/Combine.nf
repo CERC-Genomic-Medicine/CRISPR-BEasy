@@ -9,9 +9,15 @@ take :
    csv
    vep
 main:
+// Fasta (derived from Genome) //
+Channel
+    .fromPath(params.fasta_loc)
+    .map { path -> file(path.toString() + '.fai') }
+    .set { fasta_database_ch }
+
    CSV=combine_csv( csv )
    VEP=combine_vep( vep.flatten().map{ t -> [t.baseName.tokenize('_')[3], t]}.groupTuple(), CSV.remove)
-   report(CSV.CSV, VEP.collect() )
+   report(CSV.CSV, VEP.collect(), fasta_database_ch )
 
 }
 

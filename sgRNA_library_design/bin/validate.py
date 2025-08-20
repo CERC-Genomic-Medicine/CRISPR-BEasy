@@ -18,6 +18,11 @@ import re
 import gffutils
 import pyranges as pr
 import warnings
+from rapidfuzz import process, fuzz
+import json
+import sys
+from typing import Dict, List, Tuple, Any, Literal
+
 
 argparser = argparse.ArgumentParser(
     description='This software produces a bed file corresponding to the regions of interest as defined by a protein (corresponding to a genome) and the desired Feature. This represent the first step (potentially optional) in producing a library design crispr Array')
@@ -43,7 +48,6 @@ argparser.add_argument('-F', '--Features', metavar='Annotation', dest='features'
                        required=False, nargs='*', default=['CDS'], help='Feature Types to be analysed (default exons)')
 argparser.add_argument('-L','--limit', dest = 'limit', type=int, required = False, help = 'base pair Limit')
 argparser.add_argument('-I','--isoform', dest = 'isoform', type=str, required = False, help = 'Which Isofrom filter shoudl be applied (None, Canonical MANE ')
-argparser.add_argument('--protist', dest = 'protist', action='store_true', required = False, help = 'Protist do not have transcript level because there is no alternate isoform')
 
 def validate_editor_file(file_path):
     """
@@ -109,6 +113,125 @@ def validate_editor_file(file_path):
             pass
 
 
+def _fetch_rows_for_entry(
+    db: gffutils.FeatureDB,
+    entry: str,
+    border: int = 0,
+    isoform: Literal[None, "Ensembl_canonical","MANE_Select"] = None,
+) -> Tuple[List[Dict[str, Any]],list[str], List[str], List[str]]:
+    """
+    Returns (rows, warnings, errors), where rows is a list of dicts with keys:
+    Chromosome, Start, End, ID  (0-based, end-open)
+    """
+    rows: List[Dict[str, Any]] = []
+    warnings: List[str] = []
+    errors: List[str] = []
+    errors_prot: List[str] = []
+    valid_types = set(db.featuretypes())
+    sub_fetch = ""
+    fetch_element = ""
+    fetch_type = ""
+    if border < 0:
+        errors.append("border must be >= 0")
+        return rows,[] ,warnings, errors
+
+    ######################## Parse "ID", "ID|feature_type", "ID|transcript|feature_type", ID|transcript ##########################
+    parts = entry.split("|", 1)
+    if len(parts) == 1:
+        fetch_element = parts[0]
+        fetch_type: Optional[str] = 'CDS'
+    elif len(parts) == 2 and parts[1]:
+        if parts[1] in valid_types or parts[1] == 'All' :
+            fetch_element, fetch_type = parts[0], parts[1]
+            fetch_type = fetch_type if fetch_type != 'All' else None
+        else :
+            fetch_element, sub_fetch = parts[0], parts[1]
+            fetch_type: Optional[str] = 'CDS'
+    elif len(parts) == 3 and parts[0] and parts[1] and parts[2]:
+        fetch_element, sub_fetch, fetch_type = parts[0], parts[1], parts[2]
+        fetch_type = fetch_type if fetch_type != 'All' else None
+        print(sub_fetch)
+    else:
+        errors.append(f"{entry} is in an unaccepted format (use 'ID' or 'ID|feature_type').")
+        return rows, warnings, errors, errors_prot
+    if fetch_type and fetch_type not in valid_types:
+        errors.append(
+                f"Unknown feature_type '{fetch_type}' in {entry}. \n Valid types include: {', '.join(sorted(list(valid_types)))}"
+            )
+        return rows,[], warnings, errors, errors_prot
+    ###################### Establish selected base Feature #############
+    print(fetch_element)
+    try:
+        base_feat = db[fetch_element]
+        gene_name=base_feat.id
+    except:
+        errors.append(f"'{fetch_element}' was not found in database")
+        errors_prot.append(fetch_element)
+        return rows,[], warnings, errors, errors_prot
+    #### Resolve subfetch
+    if sub_fetch :
+        children = list(db.children(fetch_element, level=1))
+        isoform_feat = [t for t in children 
+                   if ("Name" in t.attributes and sub_fetch in t.attributes["Name"])
+                       or ("transcript_id" in t.attributes and sub_fetch in t.attributes["transcript_id"])]
+        if not isoform_feat :
+            errors.append(f"{sub_fetch} is neither an isoform of {base_feat.id} nor a valid feature type")
+            return rows,[], warnings, errors, errors_prot
+        elif len(isoform_feat) > 1:
+            warnings.append(f"More than one {isoform} isoform found under gene {base_feat.id}; using the first.")
+        print(isoform_feat)
+        base_feat=isoform_feat[0]
+        gene_name=isoform_feat[0].attributes["transcript_id"][0]
+        if isoform and not isoform in base_feat.attributes["tag"]:
+            warnings.append(f'{base_feat.id} is not {isoform}, Proceed with caution.')
+                
+    if base_feat.featuretype == "gene" and isoform:
+        try:
+            # Keep level=1 to ensure direct children; allow any transcript-like type
+            children = list(db.children(fetch_element, level=1))
+            # Filter transcripts with 'tag' attribute containing isoform
+            tagged = [t for t in children if "tag" in t.attributes and isoform in t.attributes["tag"]]
+            if not tagged:
+                errors.append(f"No {isoform} isoform found under gene {base_feat.id}")
+                return rows, [], warnings, errors, errors_prot
+            if len(tagged) > 1:
+                warnings.append(f"More than one {isoform} isoform found under gene {base_feat.id}; using the first.")
+            base_feat = tagged[0]
+            gene_name= tagged[0].attributes["transcript_id"][0]
+        except :
+            errors.append(f"'{fetch_element}' was not found in database")
+            errors_prot.append(fetch_element)
+            return rows, [],warnings, errors, errors_prot
+    try:
+        if fetch_type:
+            feats = list(db.children(fetch_element, featuretype=fetch_type))
+            if not feats:
+                errors.append(f"No children of type '{fetch_type}' under '{fetch_element}'")
+                return rows,[], warnings, errors, errors_prot
+        else:
+            feats = [base_feat]
+    except :
+        errors.append(f"GFF query failed for '{fetch_element}': {e}")
+        return rows, [],  warnings, errors, errors_prot
+    # Build rows (0-based, end-open)
+    seen = set()
+    for f in feats:
+        if f.id in seen:
+            continue
+        seen.add(f.id)
+        start0 = max(0, (f.start - 1) - border)
+        end0 = f.end + border
+        rows.append({
+            "Chromosome": f.seqid,
+            "Start": int(start0),
+            "End": int(end0),
+            "Gene" : fetch_element,
+        })
+    return rows,[gene_name] , warnings, errors, errors_prot
+
+
+
+
 
 def check_bed_overlap(encode_blacklist, chromosome_ranges, chr, start, end, Library_type):
     """
@@ -145,51 +268,23 @@ def check_bed_overlap(encode_blacklist, chromosome_ranges, chr, start, end, Libr
     return returned
 
 
-
-def transform_func(x):
-    # adds some text to the end of transcript IDs
-    if 'transcript_id' in x.attributes:
-        x.attributes['transcript_id'][0] += '_transcript'
-    return x
-
-def Feature_Annotation(Feature, listed):
-    returned = []
-    if isinstance(Feature, str):
-        h = list(
-            set([y for x in listed for y in db.children(x, featuretype=Feature)]))
-    FeatureType = Feature
-    for rec in h:
-        Start_edit_freature = rec.start-args.border
-        End_edit_freature = rec.end+args.border
-        returned.append([rec.seqid, Start_edit_freature,
-                         End_edit_freature])
-    return returned
-
-def Feature_Annotation_protist(Feature, protein):
-    returned = []
-    h = list(set([f for f in db.children(db[protein].attributes['ID'][0], featuretype=Feature)]))
-    FeatureType = Feature
-    for rec in h:
-        Start_edit_freature = rec.start-args.border
-        End_edit_freature = rec.end+args.border
-        returned.append([rec.seqid, Start_edit_freature,
-                         End_edit_freature])
-    return returned
-
 def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
     prot = open(file, 'r')
     Lines = prot.readlines()
     gen_errors=[]
     fetch_error=[]
+    fetch_error_protein=[]
+    warnings_list=[]
+    ensembl_list=[]
     returned = pd.DataFrame(columns=['Chromosome', 'Start', 'End', 'Gene'])
     if os.stat(file).st_size == 0:
-        return gen_errors, fetch_error, returned
+        return gen_errors, fetch_error, fetch_error_protein, warnings_list,ensembl_list, returned
     try :
         lines = pd.read_csv(file, sep=" ", header=None)
         del lines
     except : 
         gen_errors=errors+[f'file input for {Library_type} is of the wrong format']
-        return gen_errors, fetch_error, returned
+        return gen_errors, fetch_error , fetch_error_protein, warnings_list,ensembl_list, returned
     for line in Lines:
         protein = str(line.strip())
         if protein.startswith('custom:'):
@@ -209,106 +304,25 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
             df={'Chromosome':[chrom],'Start':[start],'End' : [end], 'Gene':[protein]}
             returned=pd.concat([returned,pd.DataFrame(df)], axis=0, ignore_index=True)
         else:
-            PAM_occurences = []
-            if args.protist:
-                if args.isoform == 'MANE':
-                    fetch_error = fetch_error + ['protist do not have MANE annotations']
-                PAM_occurences.extend(Feature_Annotation_protist(args.features,protein))
-                pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=['Chromosome', 'Start', 'End'])).merge()
-                df = pyranges.as_df()
-                df['Gene'] = protein
-                returned=pd.concat([df,returned])
-            elif args.isoform == 'MANE':
-                if args.Genome != 'hg38':
-                    fetch_error = fetch_error + ['Only hg38 assembly possess MANE annotations']
-                    break
-                try : q=[f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0]) if 'tag' in f.attributes.keys() and 'MANE_Select' in f.attributes['tag']]
-                except gffutils.exceptions.FeatureNotFoundError :
-                    try :
-                        # Trying but not keeping
-                        g = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
-                        continue
-                    except gffutils.exceptions.FeatureNotFoundError :
-                        fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
-                        continue
-                    else :
-                        fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a MANE isoform in database']
-                        continue
-                if not q :
-                        fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a MANE isoform in database']
-                        continue
-            elif args.isoform == 'Canonical':
-                try : q=[f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0]) if 'tag' in f.attributes.keys() and 'Ensembl_canonical' in f.attributes['tag']]
-                except gffutils.exceptions.FeatureNotFoundError :
-                    try :
-                        #Trying not keeping
-                        g = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
-                        continue
-                    except gffutils.exceptions.FeatureNotFoundError :
-                        fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
-                        continue
-                    else :
-                        fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a Canonical isoform in database']
-                        continue
-                if not q :
-                    fetch_error=fetch_error+[f'{protein} ({Library_type}) did not have a Canonical isoform in database']
-                    continue
-            else:
-                try : q = [f.attributes['ID'][0] for f in db.children(db[protein].attributes['ID'][0])]
-                except gffutils.exceptions.FeatureNotFoundError :
-                    fetch_error=fetch_error+[f'{protein} ({Library_type}) was not found in database']
-                    continue
-            if not args.protist:
-                for Feature in args.features:
-                    PAM_occurences.extend(Feature_Annotation(Feature, q))
-                    pyranges = pr.PyRanges(pd.DataFrame(PAM_occurences, columns=[
-                                   'Chromosome', 'Start', 'End'])).merge()
-                    df = pyranges.as_df()
-                    df['Gene'] = protein
-                    if returned.empty:
-                        returned=df
-                    else:
-                        returned=pd.concat([df,returned])
-    return gen_errors, fetch_error, returned
+            rows,ensembl_filter , ws, es, er = _fetch_rows_for_entry(db, protein, border=args.border, isoform=args.isoform if args.isoform != 'None' else None)
+            returned=pd.concat([returned,pd.DataFrame(rows)], axis=0, ignore_index=True)
+            print(returned)
+            ensembl_list.extend(ensembl_filter)
+            warnings_list.extend(ws)
+            fetch_error.extend(es)
+            fetch_error_protein.extend(er)
+    try :
+        ranges = pr.PyRanges(returned).merge(by="Gene")
+        overlaps=ranges.count_overlaps(ranges).df
+        returned=ranges.as_df()
+        print(overlaps)
+        if (overlaps['NumberOverlaps']> 1).any():
+                duplicative= overlaps.loc[overlaps[NumberOverlaps]> 1,'Gene']
+                gen_errors = gen_errors + [f'Some genes within {Library_type} overlaps with other in the same library : {", ".join(duplicative)}']
+    except:
+        returned = []
+    return gen_errors, fetch_error, fetch_error_protein, warnings_list, ensembl_list, returned
 
-
-def merge_overlapping_genes(df):
-    """
-    Takes a BED-like DataFrame with 'Chromosome', 'Start', 'End', and 'Gene' columns.
-    Merges overlapping and continuous regions, concatenates gene names, and removes empty gene segments.
-    """
-    # Remove empty gene entries
-    df = df.dropna(subset=["Gene"])
-    df = df[df["Gene"] != ""]
-    
-    # Sort by chromosome and start position
-    df = df.sort_values(by=["Chromosome", "Start"]).reset_index(drop=True)
-
-    merged_intervals = []
-    current_start, current_end, current_genes = df.iloc[0]["Start"], df.iloc[0]["End"], set(df.iloc[0]["Gene"].split("-"))
-
-    # Iterate through regions
-    for i in range(1, len(df)):
-        row = df.iloc[i]
-        row_genes = set(row["Gene"].split("-"))
-
-        # If the current region overlaps or is continuous with the previous one, merge it
-        if row["Start"] <= current_end:
-            current_end = max(current_end, row["End"])
-            current_genes.update(row_genes)
-        else:
-            # Append the last merged region
-            merged_intervals.append([df.iloc[0]["Chromosome"], current_start, current_end, ":".join(sorted(current_genes))])
-            # Start a new merged region
-            current_start, current_end, current_genes = row["Start"], row["End"], row_genes
-
-    # Append the last merged region
-    merged_intervals.append([df.iloc[0]["Chromosome"], current_start, current_end, ":".join(sorted(current_genes))])
-
-    # Convert back to DataFrame
-    merged_df = pd.DataFrame(merged_intervals, columns=["Chromosome", "Start", "End", "Gene"])
-
-    return merged_df
 
 def find_duplicates(file1, file2, file3):
     files = [file1, file2, file3]
@@ -350,18 +364,32 @@ if __name__ == '__main__':
             db = gffutils.create_db(args.Genome, Genome_file + '.db', id_spec={'gene': 'gene_name', 'transcript': "transcript_id"}, merge_strategy="create_unique", transform=transform_func, keep_order=True)
         except:
             raise ValueError(f'Genome freature database {args.Genome} is not in the correct format')
-    target_error, fetch_target_error, target_df = fetch_bed(args.target_file ,encode_blacklist,chromosome_ranges, db, 'Target Library')
-    positive_error , fetch_positive_error, positive_df = fetch_bed(args.positive_file,encode_blacklist,chromosome_ranges, db, 'Positive Library')
-    negative_error , fetch_negative_error, negative_df = fetch_bed(args.negative_file,encode_blacklist,chromosome_ranges, db, 'Negative Library')
-    errors = errors+ target_error + positive_error + negative_error
-    fetch_errors=fetch_errors+fetch_target_error+fetch_negative_error+fetch_positive_error
-    if fetch_errors :
+    target_error, fetch_target_error, fetch_target_error_protein, warn_target, ensembl_target, target_df = fetch_bed(args.target_file ,encode_blacklist,chromosome_ranges, db, 'Target Library')
+    positive_error, fetch_positive_error, fetch_positive_error_protein, warn_positive, ensembl_positive, positive_df = fetch_bed(args.positive_file,encode_blacklist,chromosome_ranges, db, 'Positive Library')
+    negative_error, fetch_negative_error, fetch_negative_error_protein, warn_negative, ensembl_negative, negative_df = fetch_bed(args.negative_file,encode_blacklist,chromosome_ranges, db, 'Negative Library')
+    warni= warn_target + warn_positive + warn_negative
+    errors = errors + target_error + positive_error + negative_error
+    fetch_errors = fetch_errors + fetch_target_error + fetch_negative_error + fetch_positive_error
+    fetch_errors_protein = fetch_target_error_protein + fetch_positive_error + fetch_negative_error
+    if warni :
+        with open('warnings.txt', 'w') as file:
+            file.write('\n'.join(warni))        
+    if fetch_errors_protein :
+        reference_list = [i.id for i in db.features_of_type("gene")]
+        suggestion_list = [
+        f'{target} -> {process.extractOne(target, reference_list, scorer=fuzz.ratio)[0]}'
+        for target in fetch_errors_protein
+        ]
+        with open('suggestion.err', 'w') as file:
+            file.write('\n'.join(suggestion_list))
+    elif fetch_errors :
         with open('fetch.err', 'w') as file:
             file.write('\n'.join(fetch_errors))
     elif errors :
         with open('errors.err', 'w') as file:
             file.write('\n'.join(errors))
     else :
+        print(target_df)
         target_pr = pr.PyRanges(target_df[['Chromosome', 'Start', 'End']])
         positive_pr = pr.PyRanges(positive_df[['Chromosome', 'Start', 'End']])
         negative_pr = pr.PyRanges(negative_df[['Chromosome', 'Start', 'End']])
@@ -383,3 +411,9 @@ if __name__ == '__main__':
             positive_df.to_csv('Positive_Controls_library.bed',sep='\t', index=False, header=False)
         if not negative_df.empty:
             negative_df.to_csv('Negative_Controls_library.bed',sep='\t', index=False, header=False)
+        with open('target.ens', 'w') as file:
+            file.write('\n'.join(ensembl_target))
+        with open('negative.ens', 'w') as file:
+            file.write('\n'.join(ensembl_negative))
+        with open('positive.ens', 'w') as file:
+            file.write('\n'.join(ensembl_positive))

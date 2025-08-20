@@ -2,6 +2,7 @@ process report {
   input :
    path(Base_annotation)
    path(vep)
+   path(fasta_index)
 
   output : 
     path("*.html"), emit: html
@@ -12,108 +13,18 @@ process report {
  publishDir "${params.Report_output}/ancillary_files/", pattern: "*.json", mode: "copy"
  publishDir "${params.Report_output}/", pattern: "*.html", mode: "copy"
 
-    def species
-    def release
-    def genome_vep
-    def baseurl
-    def collection
-    switch (params.genome) {
-        case "hg38":
-            species = "Homo_sapiens"
-            genome_vep='GRCh38'
-            collection= ''
-            release='113'
-            baseurl='https://ftp.ensembl.org/pub'
-            break
-        case "mm39":
-            species = "Mus_musculus"
-            release='113'
-            collection= ''
-            genome_vep='GRCm39'
-            baseurl='https://ftp.ensembl.org/pub'
-            break
-        case "TAIR10":
-            species = "Arabidopsis_thaliana"
-            genome_vep='TAIR10'
-            release = '60'
-            collection= ''
-            baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants'
-            break
-        case "CHOK1S_HDv1":
-            species = "Cricetulus_griseus_chok1gshd"
-            release = '113'
-            genome_vep='CHOK1GS_HDv1'
-            collection= ''
-            baseurl='https://ftp.ensembl.org/pub'
-            break
-        case "ASM584v2":
-            species = "Escherichia_coli_o157_h7_str_sakai_gca_000008865"
-            baseurl = 'https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria'
-            genome_vep = 'ASM886v2'
-            release ='60'
-            collection= ' --collection /bacteria_128_collection'
-            break
-        case "GRCg7b":
-            species = "Gallus_gallus"
-            genome_vep='bGalGal1.mat.broiler.GRCg7b'
-            release='113'
-            collection= ''
-            baseurl='https://ftp.ensembl.org/pub'
-            break
-        case "mRatBN7.2":
-            species = "Rattus_norvegicus"
-            genome_vep = 'mRatBN7.2'
-            release = '113'
-            collection= ''
-            baseurl='https://ftp.ensembl.org/pub'
-            break
-        case "WBCel235":
-            species = "Caenorhabditis_elegans"
-            genome_vep = 'WBcel235'
-            release = '60'
-            collection= ''
-            baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/metazoa'
-            break
-        case "R64_1_1":
-            species = "Saccharomyces_cerevisiae"
-            genome_vep = 'R64-1-1'
-            release = '60'
-            collection= ''
-            baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/fungi'
-            break
-        case "BDGP_6":
-            species = "Drosophila_melanogaster"
-            genome_vep = 'BDGP6.46'
-            release ='60'
-            collection= ''
-            baseurl = 'https://ftp.ebi.ac.uk/ensemblgenomes/pub/metazoa'
-            break
-        case "GRCz11":
-            species = "Danio_rerio"
-            genome_vep="GRCz11"
-            release='113'
-            collection= ''
-            baseurl='https://ftp.ensembl.org/pub'
-            break
-        case "ASM294v2":
-            species = "Schizosaccharomyces_pombe"
-            release='60'
-            collection= ''
-            genome_vep='ASM294v2'
-            baseurl='https://ftp.ebi.ac.uk/ensemblgenomes/pub/fungi'
-            break
-        default:
-            species = "Unknown"
-            cache_version=''
-    }
-        script:        
+script :
+
+def FastaUrl_Mod = params.fasta_url
+    .replace('/dna/',         '/dna_index/')
+    .replace('primary_assembly','toplevel')
      """
       source ${params.Python_env}
       report_script.py -c ${Base_annotation} -v *vep.txt
-      bedToBam -i guides.bed -g ${params.Gen_pipeline_data}/genomes/${params.genome}/${params.genome}.fa.fai > temp.bam
+      bedToBam -i guides.bed -g ${fasta_index} > temp.bam
       samtools sort temp.bam -o sgRNA_location.bam
       rm temp.bam
       samtools index sgRNA_location.bam
-      render_report.py --template ${projectDir}/assets/report_templates/report_template.txt --genome ${params.genome} --genome_vep ${genome_vep} --species_vep ${species} --release ${release} ${collection} --baseurl ${baseurl} --output report.html
+      render_report.py --template ${projectDir}/assets/report_templates/report_template.txt --genome ${params.genome} --fasta_url "${FastaUrl_Mod}" --fasta_index_url "${FastaUrl_Mod}.fai" --fasta_gz_gzi "${FastaUrl_Mod}.gzi" --gff3_url "${params.gff3_url}" --output report.html
       """
 }

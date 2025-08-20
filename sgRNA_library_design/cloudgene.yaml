@@ -1,6 +1,6 @@
 id: sgRNA_library_Design
 name: 'Step I: SgRNA Library Design'
-version: 0.3
+version: 1.0
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 workflow:
@@ -12,7 +12,9 @@ workflow:
       script : main.nf
       params:
         project: "${CLOUDGENE_JOB_NAME}"
-        protein_id : "${protein_id}"
+        Genome_Json: "${genomic_dataset.database_url}"
+        Cas_Variant_Json: "${cas_dataset.database_url}"
+        Target_genes : "${Target_genes}"
 
       groups :
         - id : "Validation"
@@ -138,6 +140,18 @@ workflow:
           view: progressbar
           label: "Annotate Predicted Mutations"
           group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:annotate_tar"
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:annotate_tar"
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:annotate_tar"
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Target_library_prep"
         - process: "Crispr_Positive_library_prep:combine_annotations"
           view: status
           label: "Annotate Predicted Mutations"
@@ -179,30 +193,19 @@ workflow:
 
   inputs:
 
-    - id : protein_id
-      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>)
+    - id : Target_genes
+      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-to-perform-complex-sgrna-design-query" target="_blank">example</a>)
       type: textarea
       required : true
-      details: 'A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls).'
+      details: "A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls)."
 
-    - id : genome
+    - id: genomic_dataset
       description : Genome Build <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-do-i-request-a-new-genome" target="_blank">Missing your genome ?</a>)
+      type: dataset
       required : true
-      type : list
-      value : 'hg38'
-      values :
-        hg38 : 'Homo sapiens - hg38'
-        mm39 : 'Mus musculus - mm39'
-        GRCg7b : 'Gallus Gallus - bGalGal1.mat.broiler.GRCg7b'
-        ASM584v2 : 'Escherichia coli - ASM584v2'
-        TAIR10 : 'Arabidopsis Thaliana - TAIR10'
-        mRatBN7.2 : 'Rattus norvegicus - mRatBN7.2'
-        WBCel235 : ' Caenorhabditis elegans - WBCel235'
-        R64_1_1 : 'Saccharomyces cerevisiae - R64'
-        BDGP_6 : 'Drosophila melanogaster - dm6'
-        GRCz11 : 'Danio Rerio - GRCz11'
-        ASM294v2 : 'Schizosaccharomyces pombe - ASM294v2'
-        CHOK1S_HDv1 : 'Chinese Hamster Ovary cell line - CHOK1S_HDv1'
+      category: genomic_database
+      value : apps@GRCh38@114
+      serialize: false
 
     - id : isoform
       description : "Isoform to select"
@@ -210,11 +213,12 @@ workflow:
       type : radio
       value : None
       values :
-        MANE: MANE (only available on the human genome)
-        Canonical: Canonical
+        MANE_Select: MANE
+        Ensembl_canonical: Canonical
         None: All isoform
+      details: "Isoform to select (if unspecified)"
 
-    - id : border
+    - id : Flanking
       description : 'Flanking regions (bp) :'
       required : false
       details : "Number [0-100]"
@@ -224,43 +228,13 @@ workflow:
     - id: myseparator
       type: separator
 
-    - id : casName
+    - id : cas_dataset
       description : Cas variant <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#cas-variant-available" target="_blank">Details</a>)
       required : true
-      type : list
-      value : 'SpCas9'
-      values :
-        SpCas9 : "20 bp - NGG - SpCas9"
-        SpCas9-NG : "20 bp - NG - SpCas9-NG"
-        SpCas9-NRRH : "20 bp - NRRH - SpCas9-NRRH"
-        SpCas9-NRTH : "20 bp - NRTH - SpCas9-NRTH"
-        SpCas9-NRCH : "20 bp - NRCH - SpCas9-NRCH"
-        SpCas9(VQR/VRQR) : "20 bp - NGA - SpCas9(VQR/VRQR)"
-        xCas9 : "20 bp - NG - xCas9"
-        SpG : "20 bp - NG - SpG"
-        SpRY : "20 bp - NNN - SpRY"
-        SpCas9-CP1012 : "20 bp - NGG - SpCas9-CP1012"
-        SpCas9-CP1028 : "20 bp - NGG - SpCas9-CP1028"
-        SpCas9-CP1041 : "20 bp - NGG - SpCas9-CP1041"
-        SpCas9-1249 : "20 bp - NGG - SpCas9-1249"
-        SpCas9-(HF1/HF2) : "20 bp - NGG - SpCas9-(HF1/HF2)"
-        eSpCas9 : "20 bp - NGG - eSpCas9"
-        HypaCas9 : "20 bp - NGG - HypaCas9"
-        Sniper-Cas9 : "20 bp - NGG - Sniper-Cas9"
-        evoCas9 : "20 bp - NGG - evoCas9"
-        ScCas9 : "20 bp - NNG - ScCas9"
-        ScCas9+ : "20 bp - NNG - ScCas9+"
-        Spymac : "20 bp - NAA - Spymac"
-        iSpymac : "20 bp - NAA - iSpymac"
-        SaCas9 : "22 bp - NNGRRT - SaCas9"
-        SaCas9-KKH : "22 bp - NNNRRT - SaCas9-KKH"
-        St1Cas9-LMD9 : "22 bp - NNRGAA - St1Cas9-LMD9"
-        SauriCas9 : "22 bp - NNGG - SauriCas9"
-        CjCas9 : "NNNNNRYAC - CjCas9"
-        LbCas12a : "23 bp - TTTV - LbCas12a"
-        LbCas12a-RVRR : "23 bp - RVRR - LbCas12a-RVRR"
-        AsCas12a : "23 bp - TTTV - AsCas12a"
-        enAsCas12a : "23 bp - TTNN - enAsCas12a"
+      type : dataset
+      category : cas_database
+      value : apps@SpCas9@0.0
+      serialize: false
 
     - id : Editors
       description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#editors" target="_blank">Details</a>)
@@ -293,41 +267,22 @@ workflow:
       details : Float number ]0-1]
       details : 'CFD scores are designed for SpCas9 (Doench et al, Nat Biotechnol, 2016). Check "details" for other Cas9 variants. Leave blank for unfiltered'
     
-    - id : feature
-      description : 'list of space delimited protein features to be considered'
-      required : false
-      visible : false
-      value : 'CDS'
-      type : text
-      details : 'Gene feature possible includes : gene, CDS (default), mRNA, exon, five_prime_UTR, three_prime_UTR, rRNA, tRNA, ncRNA, tmRNA, transcript, mobile_genetic_element, origin_of_replication, promoter and repeat_region \n ** Only applies to Protein and not custom regions'
-
-    - id : Consequence_choice
-      description : 'VEP pick basis'
-      required : false
-      value : 'pick' 
-      type : list
-      visible : false
-      values :
-        pick : "Ensembl pick"
-        canonical : "canonical"
-        mane : "mane"
-      details : 'If there is more than one predicted consequence (e.g. isoforms), on which basis should they be reported'
 
     - id: myseparator
       type: separator
 
-    - id : protein_Pos 
+    - id : Positive_genes 
       description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       type: textarea
-      details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
+      details : 'A one-entry-per-line file; see gene of interest section'
       required : false
 
     - id: myseparator
       type: separator
 
-    - id : protein_Neg
+    - id : Negative_genes
       description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
-      details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
+      details : 'A one-entry-per-line file; see gene of interest section'
       type: textarea
       required : false
 

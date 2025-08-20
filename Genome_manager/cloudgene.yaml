@@ -1,0 +1,46 @@
+id: Genome_Manager
+name: 'Genomic Manager'
+version: 0.4
+release: experimental
+description: "Install genomes Datasets"
+author: Vincent Chapdelaine
+workflow:
+
+  steps:
+    - name : Running Genome Manager
+      type : nextflow
+      script : main.nf
+      params:
+        project: "${CLOUDGENE_JOB_NAME}"
+        install_ensembl : "${install_ensembl}"
+
+      groups :
+        - id : "install"
+          label : "Download Assembly and Make relevant database"
+        - id : "merge"
+          label : "Add to offline database"
+        - id : "cloudgene"
+          label : 'Add to cloudgene'
+      processes:
+        - process: "install_assembly_ensembl"
+          view: status
+          label: 'Prepare Assembly'
+          group: 'install'
+        - process: "merge_assembly_jsons"
+          view: status
+          label: 'Prepare Offline database'
+          group: 'merge'
+        - process: "make_cloudgene"
+          view: status
+          label: 'Add to cloudgene'
+          group: 'cloudgene'
+
+
+
+  inputs:
+
+    - id : install_ensembl
+      description : Genome Name
+      type: text
+      required : true
+      details: 'as found in ensembl (i.e. GRCh38.p14, etc)'

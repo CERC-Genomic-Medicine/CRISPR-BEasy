@@ -105,25 +105,15 @@
             adapter: {
               type: "BgzipFastaAdapter",
               fastaLocation: {
-                uri: "{{baseurl}}/release-{{release}}/fasta{{collection}}/{{species_vep | lower}}/dna_index/{{species_vep}}.{{genome_vep}}.dna.toplevel.fa.gz",
+                uri: "{{fasta_url}}",
                 locationType: "UriLocation",
               },
               faiLocation: {
-                uri: "{{baseurl}}/release-{{release}}/fasta{{collection}}/{{species_vep | lower}}/dna_index/{{species_vep}}.{{genome_vep}}.dna.toplevel.fa.gz.fai",
+                uri: "{{fasta_index_url}}",
                 locationType: "UriLocation",
               },
               gziLocation: {
-                uri: "{{baseurl}}/release-{{release}}/fasta{{collection}}/{{species_vep | lower}}/dna_index{{Bacteria_collection}}/{{species_vep}}.{{genome_vep}}.dna.toplevel.fa.gz.gzi",
-                locationType: "UriLocation",
-              },
-            },
-          },
-          aliases: ["{{genome}}"],
-          refNameAliases: {
-            adapter: {
-              type: "RefNameAliasAdapter",
-              location: {
-                uri: "https://cerc-genomic-medicine.ca/Data/{{genome}}_alias.txt",
+                uri: "{{fasta_gz_gzi}}",
                 locationType: "UriLocation",
               },
             },
@@ -140,7 +130,7 @@
               type: "Gff3Adapter",
               gffLocation: {
                 type: "fileLocation",
-                uri: "{{baseurl}}/release-{{release}}/gff3{{collection}}/{{species_vep | lower}}/{{species_vep}}.{{genome_vep}}.{{release}}.gff3.gz",
+                uri: "{{gff3_url}}",
                 locationType: "UriLocation",
               },
             },
@@ -166,15 +156,15 @@
               sequenceAdapter: {
                 type: "BgzipFastaAdapter",
                 fastaLocation: {
-                  uri: "{{baseurl}}/release-{{release}}/fasta{{collection}}/{{species_vep | lower}}/dna_index/{{species_vep}}.{{genome_vep}}.dna.toplevel.fa.gz",
+                  uri: "{{fasta_url}}",
                   locationType: "UriLocation",
                 },
                 faiLocation: {
-                  uri: "{{baseurl}}/release-{{release}}/fasta{{collection}}/{{species_vep | lower}}/dna_index/{{species_vep}}.{{genome_vep}}.dna.toplevel.fa.gz.fai",
+                  uri: "{{fasta_index_url}}",
                   locationType: "UriLocation",
                 },
                 gziLocation: {
-                  uri: "{{baseurl}}/release-{{release}}/fasta{{collection}}/{{species_vep | lower}}/dna_index/{{species_vep}}.{{genome_vep}}.dna.toplevel.fa.gz.gzi",
+                  uri: "{{fasta_gz_gzi}}",
                   locationType: "UriLocation",
                 },
               },
