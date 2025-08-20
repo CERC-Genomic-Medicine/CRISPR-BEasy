@@ -16,7 +16,7 @@ Step 3 : Install the cloudgene application
 Step 4 : if restart cloudgene
 
 After which the following tool can be found in runs  
-![CasVariantManager](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/CasVariant_manager/CasVariantManager.png)
+![CasVariantManager](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/main/CasVariant_manager/CasVariantManager.png)
 
 ## Job Workflow
 This tool creates a json file and a cloudgene.yaml (which reference the json file). The Json file contains all pertinent information to run a sgRNA_library_design and if ran via cloudgene sgRNA_library_design will automatically reference the appropriate file. See sgRNA_library_design details if ran via command-line.
