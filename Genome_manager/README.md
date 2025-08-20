@@ -7,12 +7,12 @@ For command-line purpose, this pipeline (main.nf/nextflow.config) allow the crea
 
 ### Requiered software
 
-jq
-curl
-bowtie (version 1)
-nextflow
-R (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/installed_packages_R.txt) )
-python3 (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/requirements_python3_env.txt) )
+jq  
+curl  
+bowtie (version 1)  
+nextflow  
+R (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/main/sgRNA_library_design/installed_packages_R.txt))  
+python3 (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/main/sgRNA_library_design/requirements_python3_env.txt) )  
 
 ### Instalation For cloudgene :
 
@@ -26,7 +26,7 @@ Step 3 : Install the cloudgene application
 Step 4 : if restart cloudgene
 
 After which the following tool can be found in runs  
-![GenomeManager](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/Genome_manager/GenomeManager.png)
+![GenomeManager](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/main/Genome_manager/GenomeManager.png)
 
 Step 5 (optional but highly recommanded) : Restrict usage to administrator only.
 
