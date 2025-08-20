@@ -1,9 +1,0 @@
-{
-  "SpG": {
-    "pam":       "NGN",
-    "length":    20,
-    "CFD_access":"true",
-    "Pam_side":  "3prime",
-    "rs3_access":"true"
-  }
-}

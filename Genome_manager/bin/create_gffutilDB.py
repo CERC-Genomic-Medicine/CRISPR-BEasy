@@ -6,6 +6,7 @@ import argparse
 import re
 import gzip
 import json
+from collections import Counter
 
 argparser = argparse.ArgumentParser(
     description='install gff3')
@@ -17,30 +18,17 @@ argparser.add_argument('-O', metavar='string', dest='output', type=str, required
 
 def transform_func(x):
     # adds some text to the end of transcript IDs
-    if 'transcript_id' in x.attributes:
-        x.attributes['transcript_id'][0] += '_transcript'
+    if 'Name' in x.attributes and 'gene_id' in x.attributes and x.attributes['Name'][0] in duplicate_gene:
+        x.attributes['Unique_name'] = x.attributes['gene_id']
+    if 'Parent' in x.attributes and 'transcript_id' in x.attributes:
+        if ',' in x.attributes['Parent'][0] :
+            parents= x.attributes['Parent'][0].split(',')
+            x.attributes['Parent'][0]=",".join([dicti[parenti] for parenti in parents])
+        else :
+            x.attributes['Parent'][0] = dicti[x.attributes['Parent'][0]]
     return x
 
-def check_gene_column(file_path):
-    open_func = gzip.open if file_path.endswith('.gz') else open
-    with open_func(file_path, 'rt') as file:  # 'rt' mode ensures text reading
-        for line in file:
-            columns = line.strip().split()
-            if len(columns) >= 9:
-                match_Name = re.search(r'\bName=', columns[8])
-                match_gene = re.search(r'\bgene=', columns[8])
-                match_gene_name = re.search(r'\bgene_name=', columns[8])
-                match_gene_id = re.search(r'\bgene_id=', columns[8])
-                if match_Name:
-                    return 'Name'
-                if match_gene:
-                    return 'gene'
-                elif match_gene_name:
-                    return 'gene_name'
-                elif match_gene_id:
-                    return 'gene_id'
-            continue
-    return None  # Return None if neither pattern is found in any line
+
 
 def test_mane_select(db):
     found_mane = False
@@ -57,14 +45,33 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     genomes=os.path.splitext(args.Genome)[0].split('.')
     genome=genomes[0]
-    gene_desc=check_gene_column(args.Genome)
-    print(gene_desc)
-    db = gffutils.create_db(args.Genome, args.output + '.db', id_spec={'gene': gene_desc, 'transcript': "transcript_id"}, merge_strategy="create_unique", transform=transform_func, keep_order=True, force=True)
+    dicti ={}
+    list_gene=[]
+    db = gffutils.create_db(args.Genome, ":memory:",
+    disable_infer_transcripts=True,
+    disable_infer_genes=True,
+    id_spec={'gene': ["Name","gene_id"], 'chromosome':'ID', 'mRNA':'ID', 'ncRNA':'ID', 'pseudogenic_transcript':'ID', 'rRNA':'ID', 'snRNA':'ID', 'snoRNA':'ID', 'tRNA':'ID', 'transposable_element':'ID'}, merge_strategy='create_unique')
+    for x in db.all_features():
+        if 'Name' in x.attributes and 'gene_id' in x.attributes:
+            list_gene.append(x.attributes['Name'][0])
+    duplicate_gene = {x for x, c in Counter(list_gene).items() if c > 1}
+    for feature in db.all_features():
+        if 'Name' in feature.attributes and feature.attributes['Name'][0] in duplicate_gene and "gene_id" in feature.attributes  :
+            ided=feature.attributes['gene_id'][0]
+        else :
+            ided=feature.id
+        if 'ID' in list(feature.attributes) and "gene_id" in feature.attributes:
+            dicti[feature['ID'][0]]=ided
+    del db 
+    db1 = gffutils.create_db(args.Genome, args.output + '.db',
+    disable_infer_transcripts=True,
+    disable_infer_genes=True,
+    id_spec={'gene': ["Unique_name","Name","gene_id"], 'chromosome':'ID', 'mRNA':'ID', 'ncRNA':'ID', 'pseudogenic_transcript':'ID', 'rRNA':'ID', 'snRNA':'ID', 'snoRNA':'ID', 'tRNA':'ID', 'transposable_element':'ID'}, merge_strategy='error', transform=transform_func)
     #Test
-    total=[i for i in db.features_of_type("gene")]
+    total=[i for i in db1.features_of_type("gene")]
     firsts=total[:10]
     firsts_id=[i.id for i in firsts]
-    overall_mane=test_mane_select(db)
+    overall_mane=test_mane_select(db1)
     output_data = {
     "mane_select": overall_mane,
     "first_genes": firsts_id

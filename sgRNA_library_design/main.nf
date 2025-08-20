@@ -60,7 +60,7 @@ def paramDescriptions = ParamDocs.getParamDescriptions() // Get parameter descri
 // ==================================== Documentation & Loading params ==========================//
 if (CLOUDGENE_WORKSPACE_TYPE ) {
 //------------------- Run Cloudgene ------------//
-                def Required_parameters = ['Genome_Json','Cas_Variant_Json', 'Python_env', 'R_temporary_dir', 'Target_genes', 'isoform', 'GC', 'Flanking', 'Editors', 'feature', 'VEP_sif']
+                def Required_parameters = ['Genome_Json','Cas_Variant_Json', 'Python_env', 'R_temporary_dir', 'Target_genes', 'isoform', 'GC', 'Flanking', 'Editors', 'VEP_sif']
                 def Ignored_parameters = ['send_mail',"project","remove_empty","output","outdir","Libraries","Auxiliary_files","Report_output","Report_ancillary","Errors","Library_Type","configFile","config-file","pubDir","pub-dir"]
                 def optional_parameters = ['R_temporary_dir', 'Positive_genes', 'Negative_genes','CFD_Threshold', 'CFD_Count','limit_bp','soft_bp_limit','CFD_files','crispr_chunksize']
                 def pipelineDesc = "This pipeline helps design guide RNA for base editing based on genes/custom regions. \n Usage of this version should be restricted to cloudgene_backend"
@@ -215,17 +215,17 @@ Channel
 // ------------------------------ Process ----------------------------------//
 
        valid = Validate(Target_ch, Positive_ch, Negative_ch, Editors_file, GFF_database, fasta_database, boyle_ch)
-        Crispr_Target_library_prep( valid.target_bed, Editors_file, Target_name )
+        Crispr_Target_library_prep( valid.target_bed, Editors_file, Target_name, valid.target_ens )
        out_CSV = Crispr_Target_library_prep.out.CSV
        out_VEP = Crispr_Target_library_prep.out.VEP
 
         if (params.Positive_genes) { 
-       		Crispr_Positive_library_prep(valid.positive_bed, Editors_file, Positive_name )
+       		Crispr_Positive_library_prep(valid.positive_bed, Editors_file, Positive_name, valid.positive_ens )
        		out_CSV = out_CSV.concat(Crispr_Positive_library_prep.out.CSV)
        		out_VEP = out_VEP.concat(Crispr_Positive_library_prep.out.VEP)
        }
        if (params.Negative_genes) { 
-		Crispr_Negative_library_prep(valid.negative_bed, Editors_file, Negative_name ) 
+		Crispr_Negative_library_prep(valid.negative_bed, Editors_file, Negative_name, valid.negative_ens ) 
        		out_CSV = out_CSV.concat(Crispr_Negative_library_prep.out.CSV)
        		out_VEP = out_VEP.concat(Crispr_Negative_library_prep.out.VEP)
        }

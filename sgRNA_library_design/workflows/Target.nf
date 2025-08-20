@@ -20,6 +20,7 @@ take :
   target_bed
   editors
   name_output
+  ensembl_filter
 
 main:
 
@@ -58,10 +59,10 @@ Channel
   target_BA = Basic_Annotation( input_target.combine(fasta_database_ch), editors )
   vcfs = target_BA.VCF.flatten().combine(target_bed)
   if (!params.vep_cache_loc.endsWith('.tar.gz')) {
-        target_A = annotate(vcfs.combine(fasta_database_ch))
+        target_A = annotate(vcfs.combine(fasta_database_ch),ensembl_filter)
   } else {
         target_A = annotate_tar(vcfs.combine(fasta_database_ch),
-    Vep_cache_ch
+    Vep_cache_ch,ensembl_filter
 )
 
   }

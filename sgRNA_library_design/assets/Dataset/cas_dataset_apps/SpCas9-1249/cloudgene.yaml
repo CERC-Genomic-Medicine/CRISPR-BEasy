@@ -1,6 +1,0 @@
-id: SpCas9-1249
-name: 20 bp - NGG - SpCas9-1249
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/SpCas9-1249.json

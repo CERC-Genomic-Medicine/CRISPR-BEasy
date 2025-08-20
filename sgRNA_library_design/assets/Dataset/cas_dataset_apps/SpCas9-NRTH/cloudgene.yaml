@@ -1,6 +1,0 @@
-id: SpCas9-NRTH
-name: 20 bp - NRTH - SpCas9-NRTH
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/SpCas9-NRTH.json

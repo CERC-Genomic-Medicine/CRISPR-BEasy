@@ -1,6 +1,0 @@
-id: xCas9
-name: 20 bp - NGN - xCas9
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/xCas9.json

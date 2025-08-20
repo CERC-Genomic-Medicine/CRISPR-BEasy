@@ -1,6 +1,0 @@
-id: SaCas9
-name: 22 bp - NNGRRT - SaCas9
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/SaCas9.json

@@ -1,7 +1,6 @@
-id: sgRNA_library_Design_DEV
-name: 'Step I: SgRNA Library Design DEV'
-version: 0.4
-release: experimental
+id: sgRNA_library_Design
+name: 'Step I: SgRNA Library Design'
+version: 1.0
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 workflow:
@@ -141,6 +140,18 @@ workflow:
           view: progressbar
           label: "Annotate Predicted Mutations"
           group: "Crispr_Target_library_prep"
+        - process: "Crispr_Positive_library_prep:annotate_tar"
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Positive_library_prep"
+        - process: "Crispr_Negative_library_prep:annotate_tar"
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Negative_library_prep"
+        - process: "Crispr_Target_library_prep:annotate_tar"
+          view: progressbar
+          label: "Annotate Predicted Mutations"
+          group: "Crispr_Target_library_prep"
         - process: "Crispr_Positive_library_prep:combine_annotations"
           view: status
           label: "Annotate Predicted Mutations"
@@ -183,10 +194,10 @@ workflow:
   inputs:
 
     - id : Target_genes
-      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>)
+      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-to-perform-complex-sgrna-design-query" target="_blank">example</a>)
       type: textarea
       required : true
-      details: 'A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls).'
+      details: "A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls)."
 
     - id: genomic_dataset
       description : Genome Build <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-do-i-request-a-new-genome" target="_blank">Missing your genome ?</a>)
@@ -202,9 +213,10 @@ workflow:
       type : radio
       value : None
       values :
-        MANE: MANE (only available on the human genome)
-        Canonical: Canonical
+        MANE_Select: MANE
+        Ensembl_canonical: Canonical
         None: All isoform
+      details: "Isoform to select (if unspecified)"
 
     - id : Flanking
       description : 'Flanking regions (bp) :'
@@ -255,14 +267,6 @@ workflow:
       details : Float number ]0-1]
       details : 'CFD scores are designed for SpCas9 (Doench et al, Nat Biotechnol, 2016). Check "details" for other Cas9 variants. Leave blank for unfiltered'
     
-    - id : feature
-      description : 'list of space delimited protein features to be considered'
-      required : false
-      visible : false
-      value : 'CDS'
-      type : text
-      details : 'Gene feature possible includes : gene, CDS (default), mRNA, exon, five_prime_UTR, three_prime_UTR, rRNA, tRNA, ncRNA, tmRNA, transcript, mobile_genetic_element, origin_of_replication, promoter and repeat_region \n ** Only applies to Protein and not custom regions'
-
 
     - id: myseparator
       type: separator
@@ -270,7 +274,7 @@ workflow:
     - id : Positive_genes 
       description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       type: textarea
-      details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
+      details : 'A one-entry-per-line file; see gene of interest section'
       required : false
 
     - id: myseparator
@@ -278,7 +282,7 @@ workflow:
 
     - id : Negative_genes
       description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
-      details : 'A one-entry-per-line file; accepts protein symbol or genomic region (coded as custom:chr:start-end).'
+      details : 'A one-entry-per-line file; see gene of interest section'
       type: textarea
       required : false
 

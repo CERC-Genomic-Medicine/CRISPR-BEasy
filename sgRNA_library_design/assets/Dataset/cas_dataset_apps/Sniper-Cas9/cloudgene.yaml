@@ -1,6 +1,0 @@
-id: Sniper-Cas9
-name: 20 bp - NGG - Sniper-Cas9
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/Sniper-Cas9.json

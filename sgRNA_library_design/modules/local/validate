@@ -11,6 +11,9 @@ input:
 
     output:
     path("Study_Target_library.bed"), emit: target_bed
+    path("target.ens"), emit: target_ens
+    path("negative.ens"), emit: negative_ens
+    path("positive.ens"), emit: positive_ens
     path("Positive_Controls_library.bed"), emit: positive_bed , optional: true
     path("Negative_Controls_library.bed"), emit: negative_bed , optional: true
     path("*.err"), emit: errors , optional: true
@@ -48,12 +51,16 @@ else {
     good_array+=("<LI> Parameter Genome : ${params.genome}")
     good_array+=("<LI> Parameter Flanking Region : ${params.Flanking} bp (bases to consider on each side of the selected gene feature)")
     good_array+=("<LI> Parameter Cas9 Orthologue : ${params.casName}")
-    good_array+=("<LI> Parameter Gene Feature : ${params.feature} (feature to be investigated)")
-    if [ "${params.isoform}" == "MANE" ]; then
+    good_array+=("<LI> Parameter Default Gene Feature : CDS (feature to be investigated if unspecified)")
+    if [ "${params.isoform}" == "MANE_Select" ]; then
+      if [ "${params.mane_select}" == 'true' ]; then
       good_array+=("<LI> Parameter isoform : MANE (Isoform analysed will correspond to the MANE project)")
+      else 
+      error_array+=("<LI> Isofrom specification is invalid, this ${params.genome} does not possess MANE annotation")
+      fi
     elif [ "${params.isoform}" == "None" ]; then
       good_array+=("<LI> Parameter isform : None (All isoforms will be considered.)")
-    elif [ "${params.isoform}" == "Canonical" ]; then
+    elif [ "${params.isoform}" == "Ensembl_canonical" ]; then
       good_array+=("<LI> Parameter isform : Canonical (canonical isoforms will be considered.)")
     else 
       error_array+=("<LI> Isofrom specification is invalid (accepted : None, canonical, MANE)")
@@ -81,7 +88,7 @@ fi
 ls -lh ${boyle}
 
     awk '!seen[\$2]++ {print \$1"\\t"\$2}' $fasta_index > fasta.sizes
-    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${gff_database} -o out.bed -B ${params.Flanking} -F ${params.feature} -c fasta.sizes \${boyler} --editors ${editors} -L ${params.limit_bp}
+    validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${gff_database} -o out.bed -B ${params.Flanking} -c fasta.sizes \${boyler} --editors ${editors} -L ${params.limit_bp}
    
    if [ -e errors.err ]; then
     mapfile -t new_lines < "errors.err"
@@ -105,8 +112,23 @@ ls -lh ${boyle}
       for t in "\${error_array[@]}"; do
     	 echo "\$t"
       done
-      echo "\n"
+      echo "\n"    
       echo "::endgroup::"
+      if [ -e suggestion.err ]; then
+        mapfile -t new_lines < "suggestion.err"
+        sugession=("\${new_lines[@]}")
+        echo "::group type=error::"
+        echo "<b> Based on the genes not found in the database we think these are similar : </b>"
+        echo "<UL>"
+        for t in "\${sugession[@]}"; do
+                 echo "<LI>\${t}"
+        done
+        echo "</UL>"
+        echo "* These suggestion are purely based on character similarity (thus have strong limitation) "
+        echo " You can find the full list of genes availlable in the chosen database at https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt"
+        echo "\n"
+        echo "::endgroup::"
+      fi      
       exit 3
     elif [ -e editors.err ]; then
       echo "::group type=error::"

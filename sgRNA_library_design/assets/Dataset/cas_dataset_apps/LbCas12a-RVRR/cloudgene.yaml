@@ -1,6 +1,0 @@
-id: LbCas12a-RVRR
-name: 23 bp - RVRR - LbCas12a-RVRR
-version: 0.0
-category: cas_database
-properties:
-  database_url: ${CLOUDGENE_APP_LOCATION}/LbCas12a-RVRR.json
