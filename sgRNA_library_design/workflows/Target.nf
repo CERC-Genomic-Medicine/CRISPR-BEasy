@@ -67,11 +67,13 @@ Channel
 
   }
   //Reunify
+
   Combine_csv = combine_general(target_BA.CSV.collect(), name_output.map { it + '_library' }) 
 Combine_fail = combine_failed(target_crispr.failed.collect(),  name_output.map { it + '_library' })
   vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]), name_output.map { it + '_library' } , Combine_csv.ID_dic)
   vep = combine_annotations(target_A.Annotations.flatten().map( file -> [file.getBaseName().tokenize('_')[4], file]).groupTuple(by: [0]), name_output.map { it + '_library' }, Combine_csv.ID_dic)
   output=to_excel(Combine_csv.csv, vep.tsv.collect(), name_output.map { it + '_library' })
+
   outputCSV=Combine_csv.csv
   outputVEP=vep.tsv
 emit:

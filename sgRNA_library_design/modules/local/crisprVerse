@@ -139,8 +139,10 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
 
         print(paste0("total number of guides " , as.character(length(spacers(guideSet, as.character=TRUE)))))
 
+
         load(paste0("${CFD_files}", '/sysdata.rda'))
         source(paste0("${CFD_files}", "/CFD_alt.R"))
+
         MM_score <- cfd.mm.weights.cas9
         PAM_MM <- PAM_to_DICT("${params.pam}")
 
