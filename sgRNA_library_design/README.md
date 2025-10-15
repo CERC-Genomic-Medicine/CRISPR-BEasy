@@ -12,7 +12,7 @@ jq
 curl  
 bowtie (version 1)  
 nextflow  
-apptainer
+apptainer  
 R (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/installed_packages_R.txt) )  
 python3 (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/requirements_python3_env.txt) )  
 
