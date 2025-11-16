@@ -40,7 +40,7 @@ if __name__ == '__main__':
 #                CrisprVerseAlign = CrisprVerseAlign.loc[~CrisprVerseAlign_Spacer_site.isin(CrisprVerse_Spacer_site)]
         score_dict = CrisprVerseAlign.groupby('spacer')['CFD_score'].sum().to_dict()
         CrisprVerse['sgRNA_CFD_score'] = [
-                "NA" if score_dict[sp] == 0 else 100.0 / score_dict[sp] 
+                "NA" if sp not in score_dict.keys() or score_dict[sp] == 0 else 100.0 / score_dict[sp] 
                 for sp in CrisprVerse['spacer']
                 ]
     CrisprVerse.to_csv(f'{args.Output}.scored.tsv',sep='\t',header=True,index=False)
