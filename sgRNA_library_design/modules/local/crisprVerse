@@ -229,6 +229,8 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
                                         Guides_df = df_G\$primary
                                 } else {
                                 filtered_guideSet=guideSet_iter
+                                df_G = GuideSet2DataFrames(filtered_guideSet)
+                                Guides_df = df_G\$primary
                                 aln_DF <- as.data.frame(aln_df)
                                 }
 
