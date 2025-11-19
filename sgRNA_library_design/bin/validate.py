@@ -136,7 +136,7 @@ def _fetch_rows_for_entry(
         return rows,[] ,warnings, errors
 
     ######################## Parse "ID", "ID|feature_type", "ID|transcript|feature_type", ID|transcript ##########################
-    parts = entry.split("|", 1)
+    parts = entry.split("|")
     if len(parts) == 1:
         fetch_element = parts[0]
         fetch_type: Optional[str] = 'CDS'

@@ -13,6 +13,7 @@ import pickle
 import re
 import numpy as np
 import rs3
+import sys
 import itertools
 from rs3.seq import predict_seq
 
@@ -28,6 +29,9 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     CrisprVerse=pd.read_csv(args.Input,sep='\t')
     CrisprVerseAlign = pd.read_csv(args.align, sep='\t')
+    if len(CrisprVerse["spacer"])==0 :
+        print(f'::error:: No spacers were availlable for on target evaluation')
+        sys.exit(1)
     if len(CrisprVerse["spacer"][0]) == 20 and len(CrisprVerse["PAM"][0]) == 3 :
         context_seqs=CrisprVerse["ExtendedSqueuence"]
         hsu2013 = predict_seq(context_seqs, sequence_tracr='Hsu2013')
@@ -38,9 +42,11 @@ if __name__ == '__main__':
 #                CrisprVerse_Spacer_site = CrisprVerse['spacer'] +'_'+ CrisprVerse['pam_site'].astype(str)
 #                CrisprVerseAlign_Spacer_site = CrisprVerseAlign['spacer'] +'_'+ CrisprVerseAlign['pam_site'].astype(str)
 #                CrisprVerseAlign = CrisprVerseAlign.loc[~CrisprVerseAlign_Spacer_site.isin(CrisprVerse_Spacer_site)]
+        print(CrisprVerse)
         score_dict = CrisprVerseAlign.groupby('spacer')['CFD_score'].sum().to_dict()
+        print(score_dict)
         CrisprVerse['sgRNA_CFD_score'] = [
-                "NA" if sp not in score_dict.keys() or score_dict[sp] == 0 else 100.0 / score_dict[sp] 
+                "NA" if sp not in score_dict.keys() or  score_dict[sp] == 0 else 100.0 / score_dict[sp] 
                 for sp in CrisprVerse['spacer']
                 ]
     CrisprVerse.to_csv(f'{args.Output}.scored.tsv',sep='\t',header=True,index=False)

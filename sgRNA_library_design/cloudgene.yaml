@@ -1,6 +1,6 @@
 id: sgRNA_library_Design
 name: 'Step I: SgRNA Library Design'
-version: 1.0
+version: 1.1
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 workflow:
@@ -194,7 +194,7 @@ workflow:
   inputs:
 
     - id : Target_genes
-      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-to-perform-complex-sgrna-design-query" target="_blank">example</a>)
+      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-to-perform-complex-sgrna-design-query" target="_blank">More complex query</a>)
       type: textarea
       required : true
       details: "A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls)."

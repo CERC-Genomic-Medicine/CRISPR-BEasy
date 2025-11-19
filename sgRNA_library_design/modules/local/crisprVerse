@@ -13,9 +13,10 @@ input:
     path("${bedfile.getSimpleName()}_aln.txt"), emit : aln
     path("${bedfile.getSimpleName()}_failed.txt"), emit : failed , optional: true
     path("${bedfile.getSimpleName()}_failed_aln.txt"), emit : failed_aln , optional: true
+    path("${bedfile.getSimpleName()}_problematic.txt"), emit :_problematic , optional: true
 
 
-// publishDir "${params.Auxiliary_files}/Crispr/", pattern: "*_aln.txt", mode: "copy"
+ publishDir "${params.Auxiliary_files}/Crispr/", pattern: "*_problematic.txt", mode: "copy"
         script:
 
 
@@ -65,24 +66,22 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
         print(basename(bsgenome_name))
         chunksize  <- ${params.crispr_chunksize}
 
-        process_dna_alignments <- function(seq_df, align_df, 
-                                           score_threshold_col = "threshold",
-                                           seq_id_col = "protospacer",
-                                           align_score_col = "alignment_score",
-                                           max_alignments = 10) {
-          
+        process_dna_alignments <- function(seq_df, 
+                                           align_df, 
+                                           score_threshold_col,
+                                           seq_id_col,
+                                           align_score_col) {
+          print('doing_alignement')
           # Step 1: Count alignments exceeding threshold for each sequence
           alignment_counts <- align_df %>%
             # Join with sequence data to get thresholds
             left_join(seq_df %>% select(all_of(c(seq_id_col, score_threshold_col))), 
                       by = seq_id_col) %>%
             # Filter alignments exceeding threshold
-            filter(.data[[align_score_col]] > .data[[score_threshold_col]]) %>%
+            filter(.data[[align_score_col]] >= .data[[score_threshold_col]]) %>%
             # Count alignments per sequence
             group_by(.data[[seq_id_col]]) %>%
             summarise(n_alignments_above_threshold = n(), .groups = 'drop')
-          
-          # Return results
           return(as.data.frame(alignment_counts))
         }
 
@@ -200,33 +199,37 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
                                         guideDF = guideDF\$primary
                                         #Define the self aligned
                                         #Withdraw selfaligned
-                                        print(scores_cfd)
                                         aln_df['CFD_score'] = as.numeric(unlist(scores_cfd))
                                         #Filter Threshold
                                         if ( "${No_CFD}" == 'F' ) {
-                                            guideDF\$threshold <- CFD_T 
-                                            count <- process_dna_alignments(as.data.frame(guideDF), as.data.frame(aln_df), "threshold","spacer",'CFD_score') 
-                                            total <-count\$spacer
-                                            pass_protospacer = count[count\$n_alignments_above_threshold<= (CFD_C+1),'spacer']
-                                            fail_protospacer = count[count\$n_alignments_above_threshold> (CFD_C+1), 'spacer']
-                                            spacers = spacers(guideSet) %in% pass_protospacer
-                                            filtered_guideSet <- guideSet_iter[spacers(guideSet) %in% pass_protospacer]
-                                            guideSet_erroring <- GuideSet2DataFrames(guideSet_iter[!(spacers(guideSet_iter) %in% total), ])
-                                            failSet <- GuideSet2DataFrames(guideSet_iter[spacers(guideSet) %in% fail_protospacer, ]) #### There is a possibility of no alignement due to the PAMs and the heuristic elements ###
-                                            write.table(guideSet_erroring\$primary, row.names = FALSE, quote=FALSE, sep='\t', file=paste0(SimpleName,"_problematic.txt"),  col.names= !file.exists(paste0(SimpleName,"_problematic.txt")), append   = !(i==1))
-                                            print(pass_protospacer)
-                                            write.table(failSet\$primary, row.names = FALSE, quote=FALSE, sep='\t', file=paste0(SimpleName,"_failed.txt"),  col.names= !file.exists(paste0(SimpleName,"_failed.txt")), append   = !(i==1))
+                                            guideDF\$threshold <- as.numeric(${CFD_T})
+                                            count <- process_dna_alignments(as.data.frame(guideDF), as.data.frame(aln_df), "threshold","spacer",'CFD_score')
+                                            # Count should have a line per guide with the sole exception detailled in Problematic guides, since in should at least have 1 alignement meeting CFD score requierement *itself*
+
+                                                # PASS
+                                            pass_protospacer = count[count\$n_alignments_above_threshold<= (${CFD_C}+1),'spacer']
+                                            filtered_guideSet <- guideSet_iter[spacers(guideSet_iter) %in% pass_protospacer, ]
+                                                # FAIL 
+                                            fail_protospacer = count[count\$n_alignments_above_threshold> (${CFD_C}+1), 'spacer']
+                                            failSet <- GuideSet2DataFrames(guideSet_iter[spacers(guideSet_iter) %in% fail_protospacer, ]) #### There is a possibility of no alignement due to the PAMs and the heuristic elements ###
+                                            write.table(failSet\$primary, row.names = FALSE, quote=FALSE, sep='\t', file=paste0("${bedfile.getSimpleName()}","_failed.txt"),  col.names= !file.exists(paste0("${bedfile.getSimpleName()}","_failed.txt")), append   = !(i==1))
+
+                                                # Problematic Guides
+                                            problematic_protospacer = spacers(guideSet_iter[!(spacers(guideSet_iter) %in% count\$spacer), ])
+                                            guideSet_erroring <-  GuideSet2DataFrames(guideSet_iter[spacers(guideSet_iter) %in% problematic_protospacer, ])
+                                            write.table(guideSet_erroring\$primary, row.names = FALSE, quote=FALSE, sep='\t', file=paste0("${bedfile.getSimpleName()}","_problematic.txt"),  col.names= !file.exists(paste0("${bedfile.getSimpleName()}","_problematic.txt")), append   = !(i==1))
                                                 #CDF_Calc for sgRNA
 
                                         } else {
                                         filtered_guideSet=guideSet_iter
                                         }
-                                        aln_df <- as.data.frame(aln_df)
-                                        aln_df['CFD_score'] <- aln_df['CFD_score']*100
+                                        aln_DF <- as.data.frame(aln_df)
+                                        aln_DF['CFD_score'] <- aln_DF['CFD_score']*100
                                         df_G = GuideSet2DataFrames(filtered_guideSet)
                                         Guides_df = df_G\$primary
                                 } else {
                                 filtered_guideSet=guideSet_iter
+                                aln_DF <- as.data.frame(aln_df)
                                 }
 
 
@@ -241,9 +244,12 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
                                 write.table(Guides_df, row.names = FALSE, quote=FALSE,   col.names= !file.exists(paste0("${bedfile.getSimpleName()}",".txt")),
                                                   append   = !(i==1), sep='\t', file=paste0("${bedfile.getSimpleName()}",".txt"))
 
-                                write.table(aln_df, row.names = FALSE, quote=FALSE, sep='\t', file=paste0("${bedfile.getSimpleName()}","_aln.txt"),col.names= !file.exists(paste0("${bedfile.getSimpleName()}","_aln.txt")), append   = !(i==1))
+                                write.table(aln_DF, row.names = FALSE, quote=FALSE, sep='\t', file=paste0("${bedfile.getSimpleName()}","_aln.txt"),col.names= !file.exists(paste0("${bedfile.getSimpleName()}","_aln.txt")), append   = !(i==1))
         }
-
+if (file.exists(paste0("${bedfile.getSimpleName()}","_problematic.txt"))) {
+    cat('::message:: The OffTarget calculation method for a few guides (found in the file labeled problematic) failed. \n The issue is while only the first 1000 offTarget alignements are evaluated, none of these possessed the canonical PAM. \n these guides were by default discarded due to the high likely-hood of meeting the off-Target threshold')
+}
 
     """
 }
+
