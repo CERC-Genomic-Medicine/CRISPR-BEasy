@@ -11,6 +11,8 @@ jq
 curl  
 bowtie (version 1)  
 nextflow  
+samtools
+faToTwoBit ([http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/faToTwoBit])
 R (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/main/sgRNA_library_design/installed_packages_R.txt))  
 python3 (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/main/sgRNA_library_design/requirements_python3_env.txt) )  
 
