@@ -51,6 +51,8 @@ Channel
     .set { CFD_file_ch }
   //parallele
   Target_bed = split_bed(target_bed)
+  Target_bed.bed_chunks.view()
+  Target_bed.bed_chunks.flatten().view()
   target_crispr = CRISPRverse(Target_bed.bed_chunks.flatten(),  BSgenome_ch, CFD_file_ch, bowtie_index_folder_ch)
   Scored = OnTarget(target_crispr.crispr_base, target_crispr.aln)
   

@@ -5,7 +5,7 @@ import pandas as pd
 import argparse
 
 # Required columns
-REQUIRED_COLUMNS = {'ID','Protospacer','PAM','gRNA_seq_POSstrand','Chromosome','POSstart','strand'}
+REQUIRED_COLUMNS = {'ID','protospacer','PAM','gRNA_seq_POSstrand','Chromosome','POSstart','strand'}
 
 
 def read_and_validate_file(library, error_list):

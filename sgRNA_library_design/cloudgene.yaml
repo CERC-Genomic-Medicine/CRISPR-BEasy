@@ -1,6 +1,6 @@
 id: sgRNA_library_Design
 name: 'Step I: SgRNA Library Design'
-version: 1.1
+version: "1.1_10_09_2026"
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 workflow:
@@ -300,3 +300,8 @@ workflow:
     - id: Report_output 
       description: 'Overview of guides'
       type: local_folder
+
+    - id: Debug
+      description: 'Debug Admin only'
+      type: local_folder
+      adminOnly: true

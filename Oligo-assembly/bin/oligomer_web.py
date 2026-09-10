@@ -79,7 +79,7 @@ def Assert_Fragments_BSMBI(BSMBI, fragments):
 
 def filter_restriction_sgrna (df, library_type) :
     #test if guides induce additional restriction sites
-    test_restriction_sgrna=args.fragments[0] + df.Protospacer +args.fragments[1]
+    test_restriction_sgrna=args.fragments[0] + df.protospacer +args.fragments[1]
     test_answer=[((i.count(args.BSMBI) +  i.count(BSMBI_reverse))==3) for i in test_restriction_sgrna]
     removed=len(test_restriction_sgrna)-sum(test_answer)
     return df.iloc[test_answer], removed
@@ -192,14 +192,14 @@ if __name__ == '__main__':
         instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'])
         Positive_length= sum([int(i) for i in instructions['N']])
     else :
-        Positive = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand'])
+        Positive = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand'])
         Positive_length=0
     if args.Negative:     
         Negative = pd.read_csv(args.Negative)
         Negative, removed_negative = filter_restriction_sgrna(Negative, "negative control library")
         N=len(Negative.ID) if args.negative_number == 0 else args.negative_number
     else :  
-        Negative = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand'])
+        Negative = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand'])
         N=0
     if args.target_VEP:
         t_VEP = pd.read_csv(args.target_VEP)
@@ -210,10 +210,10 @@ if __name__ == '__main__':
     if args.negative_VEP:
         n_VEP = pd.read_csv(args.negative_VEP)
         n_VEP = n_VEP.loc[n_VEP['ID'].isin(Negative['ID']), :]
-    Target, Positive, Negative, protospacer_overlap = deduplicate_dataframes([Target,Positive,Negative], 'Protospacer', 'ID')
+    Target, Positive, Negative, protospacer_overlap = deduplicate_dataframes([Target,Positive,Negative], 'protospacer', 'ID')
     if protospacer_overlap :
         df = pd.DataFrame.from_dict(protospacer_overlap, orient='index').reset_index()
-        df.columns = ['Protospace', 'Associated_IDs']
+        df.columns = ['protospace', 'Associated_IDs']
         df.to_csv('overlap.txt', mode='a', sep='\t', header=False, index=False)
     Target.index=Target.ID
     Positive.index=Positive.ID
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                 GuidesNames = []
                 concat = [primers_forward]
                 for j in range(0, SguidePerConcat):
-                    concat.extend([frags[j], guides.iloc[i+j].Protospacer])
+                    concat.extend([frags[j], guides.iloc[i+j].protospacer])
                     GuidesNames.append(guides.iloc[i+j].ID)
                 Names = ','.join(GuidesNames)
                 concat.extend([frags[SguidePerConcat],primers_reverse])

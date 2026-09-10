@@ -61,7 +61,7 @@ def paramDescriptions = ParamDocs.getParamDescriptions() // Get parameter descri
 if (CLOUDGENE_WORKSPACE_TYPE ) {
 //------------------- Run Cloudgene ------------//
                 def Required_parameters = ['Genome_Json','Cas_Variant_Json', 'Python_env', 'R_temporary_dir', 'Target_genes', 'isoform', 'GC', 'Flanking', 'Editors', 'VEP_sif']
-                def Ignored_parameters = ['send_mail',"project","remove_empty","output","outdir","Libraries","Auxiliary_files","Report_output","Report_ancillary","Errors","Library_Type","configFile","config-file","pubDir","pub-dir"]
+                def Ignored_parameters = ['Debug','send_mail',"project","remove_empty","output","outdir","Libraries","Auxiliary_files","Report_output","Report_ancillary","Errors","Library_Type","configFile","config-file","pubDir","pub-dir"]
                 def optional_parameters = ['R_temporary_dir', 'Positive_genes', 'Negative_genes','CFD_Threshold', 'CFD_Count','limit_bp','soft_bp_limit','CFD_files','crispr_chunksize']
                 def pipelineDesc = "This pipeline helps design guide RNA for base editing based on genes/custom regions. \n Usage of this version should be restricted to cloudgene_backend"
                 // Validate the presence/absence of optional/Requiered/illegal parameters and produce custom errors

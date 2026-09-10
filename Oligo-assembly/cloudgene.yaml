@@ -1,6 +1,6 @@
 id: nf-Oligomer
 name: 'Step II: Oligo Assembly'
-version: 3
+version: "1.1_10_09_2026"
 description: "A tool to build ready-to-order sgRNA libraries as oligonucleotides"
 author: Vincent Chapdelaine
 

@@ -264,13 +264,13 @@ def check_bed_overlap(encode_blacklist, chromosome_ranges, chr, start, end, Libr
     if not within_chrom :
         returned = f'custom: {chr}:{start}-{end} ({Library_type}) \t Region not within assembly'
     elif not within_blacklist:
-        returned = f'custom: {chr}:{start}-{end} ({Library_type}) \t Region within poorly defined regions'
+        returned = f'custom: {chr}:{start}-{end} ({Library_type}) \t Region within or contains poorly defined regions (as defined by (Amemiya,2019).'
     return returned
 
 
 def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
     prot = open(file, 'r')
-    Lines = prot.readlines()
+    Lines = [line for line in prot.readlines() if line.strip()]
     gen_errors=[]
     fetch_error=[]
     fetch_error_protein=[]
@@ -370,7 +370,7 @@ if __name__ == '__main__':
     warni= warn_target + warn_positive + warn_negative
     errors = errors + target_error + positive_error + negative_error
     fetch_errors = fetch_errors + fetch_target_error + fetch_negative_error + fetch_positive_error
-    fetch_errors_protein = fetch_target_error_protein + fetch_positive_error + fetch_negative_error
+    fetch_errors_protein = fetch_target_error_protein + fetch_positive_error_protein + fetch_negative_error_protein
     if warni :
         with open('warnings.txt', 'w') as file:
             file.write('\n'.join(warni))        

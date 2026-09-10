@@ -36,35 +36,31 @@ argparser.add_argument('-G','--Genome', metavar = 'file', dest = 'Genome_file', 
 argparser.add_argument('--head', metavar = 'file', dest = 'header', type = str, required = True, help = 'VCF formats contig file')
 
 def trim_window(row):
-    seq1 = row.editing_windowSeq
-    seq2 = row.editing_window_mutated
-    start_diff = next((j for j in range(len(seq1)) if seq1[j] != seq2[j]), None)
-    end_diff = next((j for j in range(len(seq1)-1, -1, -1) if seq1[j] != seq2[j]), None)
-    if start_diff is None or end_diff is None or start_diff > end_diff:
+        seq1 = row.editing_windowSeq
+        seq2 = row.editing_window_mutated
+        start_diff = next((j for j in range(len(seq1)) if seq1[j] != seq2[j]), None)
+        end_diff = next((j for j in range(len(seq1)-1, -1, -1) if seq1[j] != seq2[j]), None)
+        if start_diff is None or end_diff is None or start_diff > end_diff:
         # No mutation
+               return pd.Series({
+               'editing_windowSTART': row.editing_windowSTART,
+               'editing_windowEND': row.editing_windowEND,
+               'editing_windowSeq': seq1,
+               'editing_window_mutated': seq2,
+               'nchange': 0
+               })
+        new_start = row.editing_windowSTART + start_diff
+        new_end = row.editing_windowSTART + end_diff + 1
         return pd.Series({
-            'editing_windowSTART': row.editing_windowSTART,
-            'editing_windowEND': row.editing_windowEND,
-            'editing_windowSeq': seq1,
-            'editing_window_mutated': seq2,
-            'nchange': 0
-        })
-    new_start = row.editing_windowSTART + start_diff
-    new_end = row.editing_windowSTART + end_diff + 1
-    return pd.Series({
-        'editing_windowSTART': new_start,
-        'editing_windowEND': new_end,
-        'editing_windowSeq': seq1[start_diff:end_diff + 1],
-        'editing_window_mutated': seq2[start_diff:end_diff + 1],
-        'nchange': sum(1 for a, b in zip(seq1[start_diff:end_diff + 1], seq2[start_diff:end_diff + 1]) if a != b)
-    })
+                'editing_windowSTART': new_start,
+               'editing_windowEND': new_end,
+               'editing_windowSeq': seq1[start_diff:end_diff + 1],
+               'editing_window_mutated': seq2[start_diff:end_diff + 1],
+               'nchange': sum(1 for a, b in zip(seq1[start_diff:end_diff + 1], seq2[start_diff:end_diff + 1]) if a != b)
+                })
 
 
 def MutateWindow(rower,edit):
-#        print(str(rower.editing_windowSTART-1))
-#        print(type(rower.editing_windowSTART - 1))
-#        print(rower.editing_windowEND)
-#        print(type(rower.editing_windowEND))
         windowSeq=str(Genome_dict[str(rower.Chromosome)][(rower.editing_windowSTART-1):(rower.editing_windowEND)].seq).upper()
         if args.gc and ((rower.strand=='+' and edit['before+'].upper()=='C') or (rower.strand=='-' and edit['before-'].upper()=='G')) :
                 returned=""
@@ -85,16 +81,12 @@ if __name__ == '__main__':
                 editor=pd.read_csv(args.Editor,index_col='name',sep='\\s+', names=['name','window_start','window_end','before+','after+'])
                 editor['after-']=[str(Seq(y).reverse_complement()) for y in editor['after+']]
                 editor['before-']=[str(Seq(y).reverse_complement()) for y in editor['before+']]
-#                print(editor)
-        if args.gc :
-                Genome_dict = SeqIO.to_dict(SeqIO.parse(args.Genome_file, "fasta"))
+        Genome_dict = SeqIO.to_dict(SeqIO.parse(args.Genome_file, "fasta"))
         scoreGuides=pd.read_csv(args.scoreGuide,sep='\t',header=0,index_col=None)
         scoreGuides.drop_duplicates(subset='spacer', inplace=True, keep=False)
         scoreGuides['targetSeq_plusStrand']=[str(Seq(row.protospacer).reverse_complement()) if '-' in  row['strand']  else row['protospacer'] for index, row in scoreGuides.iterrows()]
         ### Find protein corresponding
         scoreGuides['start_seqId']=scoreGuides['start']
-#        print(scoreGuides)
-        ### Find proiten
         bed=pr.read_bed(args.bed)
         protein=[]
         for index, row in scoreGuides.iterrows():
@@ -177,3 +169,4 @@ if __name__ == '__main__':
                                                         END='.',
                                                         FILTER ='.' ,
                                                         INFO=f'Protospacer={row['protospacer']};PAM={row['PAM']};STRAND={row.strand};Nchange= {str(row.nchange)} ;MutationFullWindow={row.MutationFullWindow};Library={args.Name}'))
+
