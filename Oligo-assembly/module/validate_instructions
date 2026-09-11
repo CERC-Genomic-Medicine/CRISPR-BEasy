@@ -21,7 +21,7 @@ good_array=()
 
 if [ -n "${params.Library_negative}" ]; then
   # Check if params.N_negative is a positive integer or zero
-  if [[ -z "${params.N_negative}" ]] || [[ ! "${params.N_negative}" =~ ^[0-9]+\$ ]] || [ "${params.N_negative}" -le 0 ]; then
+  if [[ -z "${params.N_negative}" ]] || [[ ! "${params.N_negative}" =~ ^[0-9]+\$ ]] || [ "${params.N_negative}" -lt 0 ]; then
     error_array+=("- Parameter <b>sgRNA negative control</b>: Must be positive and an integer.")
   elif [ "${params.N_negative}" -eq 0 ]; then
     good_array+=("- Parameter <b>sgRNA negative control</b>: All guides are selected.")
@@ -37,7 +37,7 @@ else
   touch Instructions_validated.txt
 fi
 
-if [ "${params.sensor}"=="true" ] ; then
+if [ "${params.sensor}" == "true" ] ; then
 sensorVAR='-s'
 else
 sensorVAR=''

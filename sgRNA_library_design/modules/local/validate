@@ -20,7 +20,7 @@ input:
 
 
 publishDir "${params.Auxiliary_files}/Genomic_regions/", pattern: "*.bed", mode: "copy"
-
+publishDir "${params.Auxiliary_files}/Genomic_regions/", pattern: "*", mode: "copy"
 
     script:
 
@@ -67,7 +67,7 @@ else {
     fi
     good_array+=("<LI> Parameter GC : ${params.GC} (C within GC pattern will not be mutated in mutation prediction if specified)")
 
-if [ ${params.CFD_access} ] ; then
+if [ "${params.CFD_access}" == "true" ] ; then
 if [ ${No_CFD} == "T" ] ; then
     good_array+=("<LI> sgRNA will not be filtered by off-target (CFD Count or Threshold is not set)")
 else
@@ -89,7 +89,8 @@ ls -lh ${boyle}
 
     awk '!seen[\$2]++ {print \$1"\\t"\$2}' $fasta_index > fasta.sizes
     validate.py -T ${targets} -N ${negative} -P ${positive} -I ${params.isoform} -G ${gff_database} -o out.bed -B ${params.Flanking} -c fasta.sizes \${boyler} --editors ${editors} -L ${params.limit_bp}
-   
+    cat suggestion.err
+   ls
    if [ -e errors.err ]; then
     mapfile -t new_lines < "errors.err"
     error_array+=("\${new_lines[@]}")
@@ -104,7 +105,8 @@ ls -lh ${boyle}
 	echo "\n"
      	echo "::endgroup::"
      	exit 1
-    elif [ -e fetch.err ]; then
+    fi
+    if [ -e fetch.err ]; then
       mapfile -t new_lines < "fetch.err"
       error_array+=("\${new_lines[@]}")
       echo "::group type=error::"
@@ -114,7 +116,9 @@ ls -lh ${boyle}
       done
       echo "\n"    
       echo "::endgroup::"
-      if [ -e suggestion.err ]; then
+      exit 3
+    fi
+    if [ -e suggestion.err ]; then
         mapfile -t new_lines < "suggestion.err"
         sugession=("\${new_lines[@]}")
         echo "::group type=error::"
@@ -128,9 +132,9 @@ ls -lh ${boyle}
         echo " You can find the full list of genes availlable in the chosen database at https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt"
         echo "\n"
         echo "::endgroup::"
-      fi      
-      exit 3
-    elif [ -e editors.err ]; then
+        exit 3
+    fi   
+    if [ -e editors.err ]; then
       echo "::group type=error::"
       echo "<b> The following error were detected : </b>"
       while IFS= read -r line; do
@@ -139,19 +143,18 @@ ls -lh ${boyle}
       echo "\n"
       echo "::endgroup::"
       exit 2
-    else
-        echo "::group type=message::"
-	echo " <b> Parameter List : </b>"
-	echo "<UL>"
-	echo "<LI> \$(grep -c ^ target.txt) entries as gene(s) of interest"
-	echo "<LI> \$(grep -c ^ negative.txt) entries as negative control gene(s)"
-	echo "<LI> \$(grep -c ^ positive.txt) entries as positive control gene(s)"
-        for t in "\${good_array[@]}"; do
-          echo "\$t"
-        done
-	echo "</UL> \n"
-	echo "::endgroup::"
-     fi
+    fi
+      echo "::group type=message::"
+      echo " <b> Parameter List : </b>"
+      echo "<UL>"
+      echo "<LI> \$(grep -c ^ target.txt) entries as gene(s) of interest"
+      echo "<LI> \$(grep -c ^ negative.txt) entries as negative control gene(s)"
+      echo "<LI> \$(grep -c ^ positive.txt) entries as positive control gene(s)"
+      for t in "\${good_array[@]}"; do
+        echo "\$t"
+      done
+      echo "</UL> \n"
+      echo "::endgroup::"
 
     """
 }

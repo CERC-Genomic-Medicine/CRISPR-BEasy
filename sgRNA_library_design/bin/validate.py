@@ -21,7 +21,7 @@ import warnings
 from rapidfuzz import process, fuzz
 import json
 import sys
-from typing import Dict, List, Tuple, Any, Literal
+from typing import Dict, List, Tuple, Any, Literal, Optional
 
 
 argparser = argparse.ArgumentParser(
@@ -101,7 +101,7 @@ def validate_editor_file(file_path):
                 errors_edit.append(f"Line {line_num}: Columns 4 and 5 must not be equal, found '{columns[3]}' and '{columns[4]}'")
         # If there are errors, write them to editors.err
     if len(editors) != len(set(editors)):
-        duplicates = [item for item in editors if strings.count(item) > 1]
+        duplicates = [item for item in editors if editors.count(item) > 1]
         duplicates = set(duplicates)  # Remove repeated duplicates in the result
         errors_edit.append(f"editors listed contains duplicates {duplicates}")
     if errors_edit:
@@ -133,7 +133,7 @@ def _fetch_rows_for_entry(
     fetch_type = ""
     if border < 0:
         errors.append("border must be >= 0")
-        return rows,[] ,warnings, errors
+        return rows, [], warnings, errors, errors_prot
 
     ######################## Parse "ID", "ID|feature_type", "ID|transcript|feature_type", ID|transcript ##########################
     parts = entry.split("|")
@@ -153,7 +153,7 @@ def _fetch_rows_for_entry(
         print(sub_fetch)
     else:
         errors.append(f"{entry} is in an unaccepted format (use 'ID' or 'ID|feature_type').")
-        return rows, warnings, errors, errors_prot
+        return rows, [], warnings, errors, errors_prot
     if fetch_type and fetch_type not in valid_types:
         errors.append(
                 f"Unknown feature_type '{fetch_type}' in {entry}. \n Valid types include: {', '.join(sorted(list(valid_types)))}"
@@ -210,7 +210,7 @@ def _fetch_rows_for_entry(
                 return rows,[], warnings, errors, errors_prot
         else:
             feats = [base_feat]
-    except :
+    except Exception as e:
         errors.append(f"GFF query failed for '{fetch_element}': {e}")
         return rows, [],  warnings, errors, errors_prot
     # Build rows (0-based, end-open)
@@ -247,30 +247,29 @@ def check_bed_overlap(encode_blacklist, chromosome_ranges, chr, start, end, Libr
     :return: String -> Expected error if region not in assembly
              None -> Everything okay
     """
-    returned = None
     # Check if the chromosome exists in the chromosome ranges
     chromosomes_in_bed = chromosome_ranges.chromosomes
     if chr not in chromosomes_in_bed:
-        returned= f'custom: {chr}:{start}-{end} ({Library_type}) \t There is no chromosome {chr} in the assembly'
+        return f'custom: {chr}:{start}-{end} ({Library_type}) \t There is no chromosome {chr} in the assembly'
+
+    # Check the record lies inside the chromosome
+    chrom_df = chromosome_ranges.df
+    chrom_end = int(chrom_df.loc[chrom_df['Chromosome'].astype(str) == str(chr), 'End'].max())
+    if start < 0 or end > chrom_end:
+        return f'custom: {chr}:{start}-{end} ({Library_type}) \t Region not within assembly (chromosome {chr} is {chrom_end} bp long)'
 
     # Create a PyRanges object for the BED record to check
     bed_record = pr.PyRanges(chromosomes=[chr], starts=[start], ends=[end])
 
-    # Check if the record is within the chromosome range
-    within_chrom = chromosome_ranges.intersect(bed_record, how= 'containment').empty
-
-    # Check if the record is within the ENCODE blacklist
-    within_blacklist = encode_blacklist.intersect(bed_record,how='containment').empty
-    if not within_chrom :
-        returned = f'custom: {chr}:{start}-{end} ({Library_type}) \t Region not within assembly'
-    elif not within_blacklist:
-        returned = f'custom: {chr}:{start}-{end} ({Library_type}) \t Region within poorly defined regions'
-    return returned
+    # Check if the record overlaps the ENCODE blacklist
+    if not encode_blacklist.intersect(bed_record).empty:
+        return f'custom: {chr}:{start}-{end} ({Library_type}) \t Region within or contains poorly defined regions (as defined by (Amemiya,2019).'
+    return None
 
 
 def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
     prot = open(file, 'r')
-    Lines = prot.readlines()
+    Lines = [line for line in prot.readlines() if line.strip()]
     gen_errors=[]
     fetch_error=[]
     fetch_error_protein=[]
@@ -311,16 +310,13 @@ def fetch_bed(file,encode_blacklist,chromosome_ranges, db, Library_type):
             warnings_list.extend(ws)
             fetch_error.extend(es)
             fetch_error_protein.extend(er)
-    try :
+    if not returned.empty :
         ranges = pr.PyRanges(returned).merge(by="Gene")
         overlaps=ranges.count_overlaps(ranges).df
         returned=ranges.as_df()
-        print(overlaps)
         if (overlaps['NumberOverlaps']> 1).any():
-                duplicative= overlaps.loc[overlaps[NumberOverlaps]> 1,'Gene']
-                gen_errors = gen_errors + [f'Some genes within {Library_type} overlaps with other in the same library : {", ".join(duplicative)}']
-    except:
-        returned = []
+                duplicative= overlaps.loc[overlaps['NumberOverlaps']> 1,'Gene']
+                gen_errors = gen_errors + [f'Some genes within {Library_type} overlaps with other in the same library : {", ".join(sorted(set(duplicative)))}']
     return gen_errors, fetch_error, fetch_error_protein, warnings_list, ensembl_list, returned
 
 
@@ -361,16 +357,16 @@ if __name__ == '__main__':
     except:
         try :
             warnings.warn(f"Creating the database {Genome_file}.db this may take a few minutes. \n In the future this database can be used in the -G argument directly Avoiding re-computation")
-            db = gffutils.create_db(args.Genome, Genome_file + '.db', id_spec={'gene': 'gene_name', 'transcript': "transcript_id"}, merge_strategy="create_unique", transform=transform_func, keep_order=True)
-        except:
-            raise ValueError(f'Genome freature database {args.Genome} is not in the correct format')
+            db = gffutils.create_db(args.Genome, Genome_file + '.db', id_spec={'gene': 'gene_name', 'transcript': "transcript_id"}, merge_strategy="create_unique", keep_order=True)
+        except Exception as e:
+            raise ValueError(f'Genome feature database {args.Genome} is not in the correct format ({e})')
     target_error, fetch_target_error, fetch_target_error_protein, warn_target, ensembl_target, target_df = fetch_bed(args.target_file ,encode_blacklist,chromosome_ranges, db, 'Target Library')
     positive_error, fetch_positive_error, fetch_positive_error_protein, warn_positive, ensembl_positive, positive_df = fetch_bed(args.positive_file,encode_blacklist,chromosome_ranges, db, 'Positive Library')
     negative_error, fetch_negative_error, fetch_negative_error_protein, warn_negative, ensembl_negative, negative_df = fetch_bed(args.negative_file,encode_blacklist,chromosome_ranges, db, 'Negative Library')
     warni= warn_target + warn_positive + warn_negative
     errors = errors + target_error + positive_error + negative_error
     fetch_errors = fetch_errors + fetch_target_error + fetch_negative_error + fetch_positive_error
-    fetch_errors_protein = fetch_target_error_protein + fetch_positive_error + fetch_negative_error
+    fetch_errors_protein = fetch_target_error_protein + fetch_positive_error_protein + fetch_negative_error_protein
     if warni :
         with open('warnings.txt', 'w') as file:
             file.write('\n'.join(warni))        
@@ -394,17 +390,17 @@ if __name__ == '__main__':
         positive_pr = pr.PyRanges(positive_df[['Chromosome', 'Start', 'End']])
         negative_pr = pr.PyRanges(negative_df[['Chromosome', 'Start', 'End']])
         length = target_pr.lengths().sum() + negative_pr.lengths().sum() + positive_pr.lengths().sum()
-        if length > args.limit:
+        if args.limit is not None and length > args.limit:
             print(f'::error:: libraries queries regions total is too high ({length} > {args.limit}')
             sys.exit("Error exit")
         if target_pr.join(positive_pr) :
             print(f'::error:: The Target library and Positive library overlaps {target_pr.join(positive_pr)}')
             sys.exit("Error exit")
         if target_pr.join(negative_pr) :
-            print(f'::error:: The Target library and Positive library overlaps {target_pr.join(negative_pr)}')
+            print(f'::error:: The Target library and Negative library overlaps {target_pr.join(negative_pr)}')
             sys.exit("Error exit")
         if negative_pr.join(positive_pr) :
-            print(f'::error:: The Target library and Positive library overlaps {negative_pr.join(positive_pr)}')
+            print(f'::error:: The Negative library and Positive library overlaps {negative_pr.join(positive_pr)}')
             sys.exit("Error exit")
         target_df.to_csv('Study_Target_library.bed',sep='\t', index=False, header=False)
         if not positive_df.empty:

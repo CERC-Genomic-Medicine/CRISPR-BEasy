@@ -10,15 +10,19 @@ process Basic_Annotation {
     path("*.per_guides.vcf.gz") , emit : VCF
 
 
+
+
+publishDir "${params.Auxiliary_files}/${params.Library_Type}/Mutation_predictions", pattern: "*empties.txt", mode: "copy"
+
 script:
 
     """
 source ${params.Python_env}
 awk '{print "##contig=<ID="\$1",length="\$2">"}' ${fasta_index} > header_contigs.txt
-    if [ ${params.GC} ]; then
+    if [ "${params.GC}" == 'true' ]; then
      GC_flag="--gc -G ${fasta}"
     else
-     GC_flag=''
+     GC_flag='-G ${fasta}'
     fi
     basic_annotation.py  --Editor ${editors} -B ${bed} -S ${score} -R  \${GC_flag} -n ${score.getSimpleName().split('_')[1]} -O ${score.getSimpleName()} --head header_contigs.txt
         for vcf in *.vcf ;

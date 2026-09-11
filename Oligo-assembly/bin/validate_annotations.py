@@ -31,15 +31,15 @@ def check_duplicates(dataframes):
         return pd.DataFrame()  # No duplicates if DataFrame is empty
 
     # Check for duplicated IDs
-    duplicated_rows=pd.DataFrame(columns=['editor','#Uploaded_variation','Location','Allele'])
+    duplicated_rows=pd.DataFrame(columns=['editor','#Uploaded_variation','Location','Allele','ID','chr_pos'])
     for sheet_name, df in dataframes.items():
     # Check for duplicated chromosome-position combinations
+        df = df.loc[:,['editor','#Uploaded_variation','Location','Allele']]
         df['ID'] = df['#Uploaded_variation'].astype(str)
         df['chr_pos'] =df['Location'].astype(str)+ '_'+df['Allele']
-        duplicated_chr_pos = df[df.duplicated(subset=['chr_pos'], keep=False)]
-        duplicated_id = df[df.duplicated(subset=['ID'], keep=False)]
-    # Combine both types of duplicated rows
-        duplicated_rows = pd.concat([duplicated_rows,duplicated_id, duplicated_chr_pos],axis=0, ignore_index=True).drop_duplicates()
+        duplicated_id = df[df.duplicated(subset=['ID','chr_pos'], keep=False)]
+        # Combine both types of duplicated rows
+        duplicated_rows = pd.concat([duplicated_rows,duplicated_id],axis=0, ignore_index=True).drop_duplicates()
         duplicated_rows=duplicated_rows.loc[:,['editor','#Uploaded_variation','Location','Allele']]
         #['editor','#Uploaded_variation','Location','Allele']
 
@@ -104,8 +104,7 @@ def validate_sheets(file_path):
 
     if Errors:
         with open(f'Sheets_{args.output}.err', 'w') as error_file:
-            for error in Errors:
-                error_file.write("\n".join(errors))
+            error_file.write("\n".join(Errors) + "\n")
 
     # Extract sheets with names matching "editor - {editor_name}"
     editor_sheets = {
@@ -123,8 +122,7 @@ def validate_sheets(file_path):
     # Report if there are any unexpected sheet names
     if Errors:
         with open(f'Sheets_{args.output}.err', 'a') as error_file:
-            for error in Errors:
-                error_file.write("\n".join(Errors))
+            error_file.write("\n".join(Errors) + "\n")
     
     return editor_sheets
 
@@ -161,7 +159,10 @@ def main(xlsx ,output_prefix):
     # If there are no errors, proceed with concatenation and duplicate checking
     if not error_list:
         if check_for_pick_flag(dataframes):
+            print('filter_check happens TRUE')
+            print(dataframes)
             dataframes = filter_pick_in_editor_sheets(dataframes)
+            print(dataframes)
         duplicated_rows = check_duplicates(dataframes)
         concatenated_df = concatenate_dataframes(dataframes)
         # Check for duplicates and save them

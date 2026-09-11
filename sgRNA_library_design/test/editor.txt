@@ -1,0 +1,3 @@
+FNLS 3 8 C T
+CDA-BE4 -1 9 C T
+ABE8 4 8 A G

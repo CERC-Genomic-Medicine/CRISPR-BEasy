@@ -9,10 +9,12 @@ label "OnTarget"
     path("*.scored.tsv"), emit: scored
     path("*_alignements.tsv")
 
+
+publishDir "${params.Debug}/Debug/", pattern: "*.tsv", mode: "copy"
 """
 source ${params.Python_env}
 
-if [[ ${params.CFD_access} ]]; then
+if [[ "${params.CFD_access}" == "true" ]]; then
         onTarget.py -I ${data} --CFD -A ${aling}  -O ${data.getSimpleName()}
 else
         onTarget.py -I ${data} -A ${aling}  -O ${data.getSimpleName()}

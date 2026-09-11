@@ -17,6 +17,7 @@ input:
 
 
  publishDir "${params.Auxiliary_files}/Crispr/", pattern: "*_problematic.txt", mode: "copy"
+ publishDir "${params.Debug}/Debug/", pattern: "*.txt", mode: "copy"
         script:
 
 
@@ -238,7 +239,7 @@ if ("$params.CFD_Threshold" == "" || "$params.CFD_Count" == "") {
 
                                 # Output
                                 extSeqs = getExtendedSequences(filtered_guideSet,-24,5)
-                                Guides_df['ContextSequence'] = getExtendedSequences(filtered_guideSet,-31,7)
+                                Guides_df['ContextSequence'] = getExtendedSequences(filtered_guideSet,-(as.numeric("${params.length}")+11) ,pamLength+6) ## -11 to +7 (-1 basepair inc) for sensor building
                                 colnames(Guides_df)[4] = "Chromosome"
                                 colnames(Guides_df)[8] = "PAM"
                                 Guides_df['ExtendedSqueuence']=extSeqs
@@ -254,4 +255,5 @@ if (file.exists(paste0("${bedfile.getSimpleName()}","_problematic.txt"))) {
 
     """
 }
+
 

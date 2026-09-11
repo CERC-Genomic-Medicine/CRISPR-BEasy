@@ -6,7 +6,7 @@ process split_bed {
     path "chunk*.bed", emit : bed_chunks
 
 
-
+ publishDir "${params.Debug}/Debug/", pattern: "*bed", mode: "copy"
  script:
     """
     split_bed.py ${bed_file} --bp_limit ${params.soft_bp_limit} --overlap 30 --divider 1

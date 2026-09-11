@@ -1,6 +1,6 @@
 id: nf-Oligomer
 name: 'Step II: Oligo Assembly'
-version: 3
+version: "1.1_10_09_2026"
 description: "A tool to build ready-to-order sgRNA libraries as oligonucleotides"
 author: Vincent Chapdelaine
 
@@ -46,7 +46,7 @@ workflow:
 
   inputs:
     - id: Library_target
-      description: Library <br> (<a href="https://cerc-genomic-medicine.ca/example_library.xlsx" target="_blank">example</a>)
+      description: Library
       type: local_file
       required: true
       details: Excel file issued from sgRNA library design
@@ -65,7 +65,7 @@ workflow:
       details: Excel file issued from sgRNA library design
 
     - id: Positive_library_instruction
-      description: Detailed Instructions <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/" target="_blank">Details</a>)
+      description: Detailed Instructions <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/Oligomer/" target="_blank">Details</a>)
       type: textarea
       required: false
       value: "FNLS 3 Stop_Gained\nABE8 10 Splice_Altering,Stop_Gained"
@@ -98,14 +98,14 @@ workflow:
       type: label
 
     - id: Primer_forward
-      description: Forward primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primer-selection-for-traditionnal-base-editing-screen" target="_blank">help</a>)
+      description: Forward primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/Oligomer/#primer-selection-for-traditionnal-base-editing-screen" target="_blank">help</a>)
       type: text
       details: Format 5->3'
       value: 'GGGTCACGCGTAGGA'
       required: true
 
     - id: Primer_reverse
-      description: Reverse primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/Oligomer/#primer-selection-for-traditionnal-base-editing-screen" target="_blank">help</a>)
+      description: Reverse primer sequence <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/Oligomer/#primer-selection-for-traditionnal-base-editing-screen" target="_blank">help</a>)
       type: text
       details : Format 5->3'
       value: 'GTTCCGCAGCCACAC'

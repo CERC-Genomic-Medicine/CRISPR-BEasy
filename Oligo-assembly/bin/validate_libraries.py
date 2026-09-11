@@ -5,7 +5,7 @@ import pandas as pd
 import argparse
 
 # Required columns
-REQUIRED_COLUMNS = {'ID','Protospacer','PAM','gRNA_seq_POSstrand','Chromosome','POSstart','strand'}
+REQUIRED_COLUMNS = {'ID','protospacer','PAM','gRNA_seq_POSstrand','Chromosome','POSstart','strand'}
 
 
 def read_and_validate_file(library, error_list):
@@ -21,10 +21,10 @@ def read_and_validate_file(library, error_list):
             df['library_oligomer'] = library[1]
             return df
         else:
-            error_list.append(f"File '{filepath}' is missing required columns: {REQUIRED_COLUMNS - set(df.columns)}")
+            error_list.append(f"File '{library[0]}' is missing required columns: {REQUIRED_COLUMNS - set(df.columns)}")
             return None
     except Exception as e:
-        error_list.append(f"File '{filepath}' of the wrong format see FAQ for details")
+        error_list.append(f"File '{library[0]}' of the wrong format see FAQ for details ({e})")
         return None
 
 
@@ -81,7 +81,7 @@ def validate_and_check_overlap(files):
         sheet_names = xlsx.sheet_names
             
         # Skip file if it only has a "library" sheet or is empty
-        if not sheet_names or sheet_names == ["library"]:
+        if not sheet_names or sheet_names == ["Library"]:
             continue
             
             # Collect all sheet names for overlap check
@@ -110,12 +110,16 @@ def main(target,positive,negative, output_prefix):
     """Main function to orchestrate the reading, validation, concatenation, and duplicate check."""
     error_list = []  # List to store errors
     files = [[target, 'Target_library'],[positive, 'Positive_control'],[negative, 'Negative_control']]
-    dataframes = [read_and_validate_file(file, error_list) for file in files if read_and_validate_file(file, error_list) is not None]
+    dataframes = [read_and_validate_file(file, error_list) for file in files]
+    dataframes = [df for df in dataframes if df is not None]
 
     # If there are no errors, proceed with concatenation and duplicate checking
     if not error_list:
         validate_and_check_overlap([target, positive, negative])
         concatenated_df = concatenate_dataframes(dataframes)
+        if concatenated_df.empty:
+            save_errors(["No sgRNA were found in the libraries provided."], f"{output_prefix}.err")
+            return
         # Check for duplicates and save them
         duplicated_rows = check_duplicates(concatenated_df)
         output_file = f"{output_prefix}_duplicate.txt"

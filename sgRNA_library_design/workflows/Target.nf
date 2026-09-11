@@ -51,6 +51,8 @@ Channel
     .set { CFD_file_ch }
   //parallele
   Target_bed = split_bed(target_bed)
+  Target_bed.bed_chunks.view()
+  Target_bed.bed_chunks.flatten().view()
   target_crispr = CRISPRverse(Target_bed.bed_chunks.flatten(),  BSgenome_ch, CFD_file_ch, bowtie_index_folder_ch)
   Scored = OnTarget(target_crispr.crispr_base, target_crispr.aln)
   
@@ -69,7 +71,7 @@ Channel
   //Reunify
   Combine_csv = combine_general(target_BA.CSV.collect(), name_output.map { it + '_library' }) 
 Combine_fail = combine_failed(target_crispr.failed.collect(),  name_output.map { it + '_library' })
-  vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getBaseName().tokenize('_')[4], file ]).groupTuple(by: [0]), name_output.map { it + '_library' } , Combine_csv.ID_dic)
+  vcfs = combine_vcfs(    target_BA.VCF.flatten().map( file -> [ file.getSimpleName().tokenize('_')[4], file ]).groupTuple(by: [0]), name_output.map { it + '_library' } , Combine_csv.ID_dic)
   vep = combine_annotations(target_A.Annotations.flatten().map( file -> [file.getBaseName().tokenize('_')[4], file]).groupTuple(by: [0]), name_output.map { it + '_library' }, Combine_csv.ID_dic)
   output=to_excel(Combine_csv.csv, vep.tsv.collect(), name_output.map { it + '_library' })
   outputCSV=Combine_csv.csv

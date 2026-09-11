@@ -6,15 +6,15 @@ process Validate_Annotation {
     path(xlsx)
 
     output:
-    path("*_annotations.csv"), emit: validated
+    path("*_annotations.csv"), emit: validated, optional : true
     path("correspondance_${Library_type}.err"), optional : true
 
 """
     exited=0
     validate_annotations.py --xlsx ${xlsx} -o ${Library_type}
     error_array=()
-    if [ -e Annotations_${Library_type}.err ]; then
-        mapfile -t new_lines < "Annotations_${Library_type}.err"
+    if [ -e ${Library_type}_annotations.err ]; then
+        mapfile -t new_lines < "${Library_type}_annotations.err"
         error_array+=("\${new_lines[@]}")
     fi
     if [ -e correspondance_${Library_type}.err ]; then
@@ -33,8 +33,8 @@ process Validate_Annotation {
      	done
      	echo "::endgroup::"
      	exited=1
-     elif [ -e ${Library_type}_duplicate_annotations.csv ]; then
-        echo "::error:: There were duplication within the libraries of ${Library_type} see ${Library_type}_duplicate_annotations.csv for list. \n by definition we expect a maximum of 1 annotation per sgRNA per editor and 1 sgRNA per position."
+     elif [ -e ${Library_type}_duplicate_annotations.err ]; then
+        echo "::error:: There were duplication within the libraries of ${Library_type} see ${Library_type}_duplicate_annotations.err for list. \n by definition we expect a maximum of 1 annotation per sgRNA per editor and 1 sgRNA per position."
      	exited=1
      fi
      exit \$exited

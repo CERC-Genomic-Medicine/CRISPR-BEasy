@@ -1,3 +1,19 @@
+*.sif
+**/*.sif
 *.DS_Store
 **/.DS_Store
-/workspace
+
+# Nextflow
+.nextflow/
+.nextflow.log*
+work/
+results/
+results_test/
+*.html
+trace.txt
+
+# Python
+__pycache__/
+*.pyc
+
+sgRNA_library_design/assets/Dataset/cas_dataset_apps/*

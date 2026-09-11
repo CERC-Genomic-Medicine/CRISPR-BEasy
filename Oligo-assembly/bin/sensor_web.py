@@ -47,7 +47,7 @@ argparser.add_argument('--negative_number', metavar='name',
 ### General
 
 argparser.add_argument('--First_enzyme', metavar='str', dest='First_enzyme',
-                       type=str, required=False, default='CGTCTC', help='Restriction Site')
+                       type=str, required=False, default='CGTCTCACACC', help='Restriction Site')
 argparser.add_argument('--Second_enzyme', metavar='str', dest='Sec_enzyme',
                        type=str, required=False, default='GAATTC', help='Restriction Site')
 argparser.add_argument('--Scaffold', metavar='str', dest='Scaffold',
@@ -56,8 +56,7 @@ argparser.add_argument('--PRIMERS', metavar=str, dest='Primers', type=str,
                        required=True, help='Primer forward,reverse')
 
 def create_oligomer(row, First_enzyme, Sec_enzyme, Scaffold, Primer_for, Primer_rev):
-    oligo = Primer_for + First_enzyme + 'G' + row['Protospacer'] + row['PAM'] + Scaffold + Sec_enzyme + Primer_rev
-    #oligo = Primer_for + row['Protospace'] + Scaffold + row['ContextSequence'] + Primer_rev
+    oligo = Primer_for + First_enzyme + 'G' + row['protospacer'] + Scaffold + row['ContextSequence'] + Sec_enzyme + Primer_rev
     return oligo
 
 def deduplicate_dataframes(dataframes: list, column_name: str, second_column_name: str):
@@ -117,7 +116,7 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
                 else :
                     accepted.extend([s.lower() for s in input_consequence])
             if 'none' in accepted:
-                acceptable_guides=pos_Annotation.loc[[row.editor == inst.editor],'ID']
+                acceptable_guides=pos_Annotation.loc[pos_Annotation['editor'] == inst.editor,'ID']
             else :
                 acceptable_guides = pos_Annotation[
                                         (pos_Annotation['editor'] == inst.editor) &
@@ -136,7 +135,7 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
         if error_list_positive :
             return [],[],error_list_positive
         else : 
-            Unused=Positive_L.loc[[P in acceptable for P in Positive_L['ID']], :]
+            Unused=Positive_L.loc[[P not in acceptable for P in Positive_L['ID']], :]
             return Used, Unused, error_list_positive
             
 
@@ -154,7 +153,7 @@ def filter_by_enzyme_oligo(df: pd.DataFrame, first_enzyme: str, sec_enzyme: str)
     if rev_sec != sec_enzyme:
         cond &= df['Oligo'].str.count(rev_sec) == 0
 
-    return df[cond]
+    return df[cond], int((~cond).sum())
 
 
 if __name__ == '__main__':
@@ -162,29 +161,41 @@ if __name__ == '__main__':
     log=[]
     args = argparser.parse_args()
     Target = pd.read_csv(args.Target)
+    compatible_version_flag = Target["ContextSequence"].str.len().eq(Target["PAM"].str.len() + Target["protospacer"].str.len() + 7 + 11).all()
+    if not compatible_version_flag :
+        error_list.append(f'Annotation of guides in traget library comes from an older version of CRISPR-BEASY (required version >= 1.2)')
     primers_reverse = str(Seq(args.Primers.split(',')[1]).reverse_complement())
     primers_forward = args.Primers.split(',')[0]
     Target["Oligo"] = Target.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
-    Target = filter_by_enzyme_oligo(Target, args.First_enzyme, args.Sec_enzyme)
+    Target, removed = filter_by_enzyme_oligo(Target, args.First_enzyme, args.Sec_enzyme)
     Target['editor']='NA'
     Library_list = []
     if args.Positive: 
         Positive = pd.read_csv(args.Positive)
+        compatible_version_flag_pos = Positive["ContextSequence"].str.len().eq(Positive["PAM"].str.len() + Positive["protospacer"].str.len() + 7 + 11).all()
+        if not compatible_version_flag_pos :
+            error_list.append(f'Annotation of guides in positive library comes from an older version of CRISPR-BEASY (required version >= 1.2)')
         Positive["Oligo"] = Positive.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
-        Positive = filter_by_enzyme_oligo(Positive, args.First_enzyme, args.Sec_enzyme)
-        instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'])
+        Positive, removed_positive = filter_by_enzyme_oligo(Positive, args.First_enzyme, args.Sec_enzyme)
+        instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'], keep_default_na=False)
         Positive_length= sum([int(i) for i in instructions['N']])
     else :
-        Positive = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
+        Positive = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
         Positive_length=0
+        removed_positive=0
     if args.Negative:     
         Negative = pd.read_csv(args.Negative)
+        compatible_version_flag_neg = Negative["ContextSequence"].str.len().eq(Negative["PAM"].str.len() + Negative["protospacer"].str.len() + 7 + 11).all()
+        if not compatible_version_flag_neg :
+            error_list.append(f'Annotation of guides in negative library comes from an older version of CRISPR-BEASY (required version >= 1.2)')
         Negative["Oligo"] = Negative.apply(lambda row: create_oligomer(row, args.First_enzyme, args.Sec_enzyme, args.Scaffold, primers_forward, primers_reverse), axis=1)
-        Negative = filter_by_enzyme_oligo(Negative, args.First_enzyme, args.Sec_enzyme)
+        Negative, removed_negative = filter_by_enzyme_oligo(Negative, args.First_enzyme, args.Sec_enzyme)
         N=len(Negative.ID) if args.negative_number == 0 else args.negative_number
     else :  
-        Negative = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
+        Negative = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand','Oligo'])
         N=0
+        removed_negative=0
+    t_VEP = p_VEP = n_VEP = pd.DataFrame(columns = ['ID','editor','Consequence'])
     if args.target_VEP:
         t_VEP = pd.read_csv(args.target_VEP)
         t_VEP = t_VEP.loc[t_VEP['ID'].isin(Target['ID']), :]
@@ -194,10 +205,10 @@ if __name__ == '__main__':
     if args.negative_VEP:
         n_VEP = pd.read_csv(args.negative_VEP)
         n_VEP = n_VEP.loc[n_VEP['ID'].isin(Negative['ID']), :]
-    Target, Positive, Negative, protospacer_overlap = deduplicate_dataframes([Target,Positive,Negative], 'Protospacer', 'ID')
+    Target, Positive, Negative, protospacer_overlap = deduplicate_dataframes([Target,Positive,Negative], 'protospacer', 'ID')
     if protospacer_overlap :
         df = pd.DataFrame.from_dict(protospacer_overlap, orient='index').reset_index()
-        df.columns = ['Protospace', 'Associated_IDs']
+        df.columns = ['protospacer', 'Associated_IDs']
         df.to_csv('overlap.txt', mode='a', sep='\t', header=False, index=False)
     Target.index=Target.ID
     Positive.index=Positive.ID
@@ -207,9 +218,11 @@ if __name__ == '__main__':
     log.append("<b> Overall statistics </b>")
     log.append(f"Primers (forw,reverse) : {args.Primers}")
     log.append(f"{Length_libraries} sgRNA requested in total")
+    log.append(f"{len(Target['ID'])} guides in target library. {removed} removed du to restriction sites.")
     if protospacer_overlap :
         log.append(f"{str(sum(len(values) for values in protospacer_overlap.values()))} guides were discarded due to their duplicate protospacers with other guides")
     if args.negative_number>=0 and not Negative.empty :
+        log.append(f"  {len(Negative['ID'])} guides in negative library. {removed_negative} removed du to restriction sites")
         log.append(f"\t{N} requested in from negative control library")
         if N > len(Negative.ID) :
             error_list.append(f'Too many guides were asked in negative controls library')
@@ -218,6 +231,7 @@ if __name__ == '__main__':
         else :
             error_list.append(f" Negative library was too short to overcome the burden of completing concatamer \n Means there would be no Negative controls")
     if  not (Positive.empty  or  p_VEP.empty) :
+        log.append(f"{len(Positive['ID'])} guides in positive control library (total). {removed_positive} removed du to restriction sites")
         log.append(f"{sum([int(i) for i in instructions['N']])} total guides requested from positive control library (pooled)")
         Library_list_Positive, Unused, errors = Positive_library_sel(instructions,Positive,p_VEP)
         if errors :
@@ -241,3 +255,4 @@ if __name__ == '__main__':
     with open("Oligomer.log", "w") as file:
             for item in log:
                 file.write(item + "\n")
+

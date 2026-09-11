@@ -79,7 +79,7 @@ def Assert_Fragments_BSMBI(BSMBI, fragments):
 
 def filter_restriction_sgrna (df, library_type) :
     #test if guides induce additional restriction sites
-    test_restriction_sgrna=args.fragments[0] + df.Protospacer +args.fragments[1]
+    test_restriction_sgrna=args.fragments[0] + df.protospacer +args.fragments[1]
     test_answer=[((i.count(args.BSMBI) +  i.count(BSMBI_reverse))==3) for i in test_restriction_sgrna]
     removed=len(test_restriction_sgrna)-sum(test_answer)
     return df.iloc[test_answer], removed
@@ -141,7 +141,7 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
                 else :
                     accepted.extend([s.lower() for s in input_consequence])
             if 'none' in accepted:
-                acceptable_guides=pos_Annotation.loc[[row.editor == inst.editor],'ID']
+                acceptable_guides=pos_Annotation.loc[pos_Annotation['editor'] == inst.editor,'ID']
             else :
                 acceptable_guides = pos_Annotation[
                                         (pos_Annotation['editor'] == inst.editor) &
@@ -160,7 +160,7 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
         if error_list_positive :
             return [],[],error_list_positive
         else : 
-            Unused=Positive_L.loc[[P in acceptable for P in Positive_L['ID']], :]
+            Unused=Positive_L.loc[[P not in acceptable for P in Positive_L['ID']], :]
             return Used, Unused, error_list_positive
             
 
@@ -189,18 +189,19 @@ if __name__ == '__main__':
     if args.Positive: 
         Positive = pd.read_csv(args.Positive)
         Positive, removed_positive = filter_restriction_sgrna(Positive, "positive control library")
-        instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'])
+        instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'], keep_default_na=False)
         Positive_length= sum([int(i) for i in instructions['N']])
     else :
-        Positive = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand'])
+        Positive = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand'])
         Positive_length=0
     if args.Negative:     
         Negative = pd.read_csv(args.Negative)
         Negative, removed_negative = filter_restriction_sgrna(Negative, "negative control library")
         N=len(Negative.ID) if args.negative_number == 0 else args.negative_number
     else :  
-        Negative = pd.DataFrame(columns = ['ID','Protospacer','Chromosome', 'POSstart', 'strand'])
+        Negative = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand'])
         N=0
+    t_VEP = p_VEP = n_VEP = pd.DataFrame(columns = ['ID','editor','Consequence'])
     if args.target_VEP:
         t_VEP = pd.read_csv(args.target_VEP)
         t_VEP = t_VEP.loc[t_VEP['ID'].isin(Target['ID']), :]
@@ -210,10 +211,10 @@ if __name__ == '__main__':
     if args.negative_VEP:
         n_VEP = pd.read_csv(args.negative_VEP)
         n_VEP = n_VEP.loc[n_VEP['ID'].isin(Negative['ID']), :]
-    Target, Positive, Negative, protospacer_overlap = deduplicate_dataframes([Target,Positive,Negative], 'Protospacer', 'ID')
+    Target, Positive, Negative, protospacer_overlap = deduplicate_dataframes([Target,Positive,Negative], 'protospacer', 'ID')
     if protospacer_overlap :
         df = pd.DataFrame.from_dict(protospacer_overlap, orient='index').reset_index()
-        df.columns = ['Protospace', 'Associated_IDs']
+        df.columns = ['protospace', 'Associated_IDs']
         df.to_csv('overlap.txt', mode='a', sep='\t', header=False, index=False)
     Target.index=Target.ID
     Positive.index=Positive.ID
@@ -244,7 +245,7 @@ if __name__ == '__main__':
             remainder=0
         elif (remainder + N ) > len(Negative['ID']) and not error_list :
             log.append(f"{(SguidePerConcat - remainder)} Negative library guides were removed due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")
-            Library_list.append(Negative.sample(args.negative_number -(SguidePerConcat - remainder),random_state=11,axis=0))
+            Library_list.append(Negative.sample(N -(SguidePerConcat - remainder),random_state=11,axis=0))
             remainder=0
         else :
             error_list.append(f" Negative library was too short to overcome the burden of completing concatamer \n Means there would be no Negative controls")
@@ -259,7 +260,7 @@ if __name__ == '__main__':
             if remainder == 0:
                 Library_list.append(Used)
             elif len(Unused['ID'])> remainder:
-                Library_list.append(Unused.sample(remainder),random_state=11,axis=0)
+                Library_list.append(Unused.sample(remainder,random_state=11,axis=0))
                 Library_list.append(Used)
                 if not error_list:
                     log.append(f"{(remainder)} Positive library guides were added at random (amongs specified editors/consqueneces) due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")
@@ -293,7 +294,7 @@ if __name__ == '__main__':
                 GuidesNames = []
                 concat = [primers_forward]
                 for j in range(0, SguidePerConcat):
-                    concat.extend([frags[j], guides.iloc[i+j].Protospacer])
+                    concat.extend([frags[j], guides.iloc[i+j].protospacer])
                     GuidesNames.append(guides.iloc[i+j].ID)
                 Names = ','.join(GuidesNames)
                 concat.extend([frags[SguidePerConcat],primers_reverse])
