@@ -11,10 +11,14 @@ Necessary software :
 jq  
 curl  
 bowtie (version 1)  
+bcftools  
+samtools  
+tabix (htslib)  
+bedtools (bedToBam)  
 nextflow  
 apptainer  
 R (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/installed_packages_R.txt) )  
-python3 (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/requirements_python3_env.txt) )  
+python3 >= 3.10 (see [packages](https://github.com/CERC-Genomic-Medicine/CRISPR-BEasy/blob/Development/sgRNA_library_design/requirements_python3_env.txt) )  
 
 
 ### Installation For cloudgene :

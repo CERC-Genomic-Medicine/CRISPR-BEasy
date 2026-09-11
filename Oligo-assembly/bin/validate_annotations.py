@@ -104,8 +104,7 @@ def validate_sheets(file_path):
 
     if Errors:
         with open(f'Sheets_{args.output}.err', 'w') as error_file:
-            for error in Errors:
-                error_file.write("\n".join(errors))
+            error_file.write("\n".join(Errors) + "\n")
 
     # Extract sheets with names matching "editor - {editor_name}"
     editor_sheets = {
@@ -123,8 +122,7 @@ def validate_sheets(file_path):
     # Report if there are any unexpected sheet names
     if Errors:
         with open(f'Sheets_{args.output}.err', 'a') as error_file:
-            for error in Errors:
-                error_file.write("\n".join(Errors))
+            error_file.write("\n".join(Errors) + "\n")
     
     return editor_sheets
 

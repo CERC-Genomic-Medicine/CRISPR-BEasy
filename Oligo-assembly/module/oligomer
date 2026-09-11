@@ -7,8 +7,8 @@ process Oligomer_WEB {
     path(Annotation)
 
     output:
-    path("Concatemere.txt"), emit : Concatemere
-    path("Prepared_libary.csv"), emit : aux
+    path("Concatemere.txt"), emit : Concatemere, optional : true
+    path("Prepared_libary.csv"), emit : aux, optional : true
     path("overlap.txt"), optional : true
 
 publishDir "${params.Oligomer_repository}/", pattern: "Concatemere.txt", mode: "copy"
@@ -53,6 +53,10 @@ if [ "\${#log_array[@]}" -gt 0 ]; then
 fi
 
 error_array=()
+if [ -e Oligomer_errors.err ]; then
+    mapfile -t new_lines < "Oligomer_errors.err"
+    error_array+=("\${new_lines[@]}")
+fi
 
 if [ "\${#error_array[@]}" -gt 0 ]; then
     echo "::group type=error::"

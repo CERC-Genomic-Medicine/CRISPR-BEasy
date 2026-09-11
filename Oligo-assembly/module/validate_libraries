@@ -16,7 +16,7 @@ process Validate_libraries {
     path("*.csv"), emit: CSV
     path("Libraries_duplicate.txt"), optional : true
 
-publishDir "${params.pubDir}/Libraries_duplicate.txt", pattern: "Libraries_duplicate.txt", mode: "copy"
+publishDir "${params.pubDir}/", pattern: "Libraries_duplicate.txt", mode: "copy"
     """
 exited=0
 validate_libraries.py -t ${targets} -p ${positive} -n ${negative} -o Libraries

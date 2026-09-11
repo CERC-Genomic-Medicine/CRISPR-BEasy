@@ -67,7 +67,7 @@ else {
     fi
     good_array+=("<LI> Parameter GC : ${params.GC} (C within GC pattern will not be mutated in mutation prediction if specified)")
 
-if [ ${params.CFD_access} ] ; then
+if [ "${params.CFD_access}" == "true" ] ; then
 if [ ${No_CFD} == "T" ] ; then
     good_array+=("<LI> sgRNA will not be filtered by off-target (CFD Count or Threshold is not set)")
 else

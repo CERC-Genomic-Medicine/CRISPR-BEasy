@@ -1,6 +1,6 @@
 id: sgRNA_library_Design
 name: 'Step I: SgRNA Library Design'
-version: "1.1_10_09_2026"
+version: "1.2"
 description: "sgRNA Library Design: A Pipeline for Designing Libraries for CRISPR Base Editing Mutagenesis Screens"
 author: Vincent Chapdelaine
 workflow:
@@ -194,13 +194,13 @@ workflow:
   inputs:
 
     - id : Target_genes
-      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/exampleGeneOfInterest.txt" target="_blank">example</a>) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-to-perform-complex-sgrna-design-query" target="_blank">More complex query</a>)
+      description : List of genes of interest <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/FAQ/#how-to-perform-complex-sgrna-design-query" target="_blank">More complex query</a>)
       type: textarea
       required : true
       details: "A one-entry-per-line file; accepts gene names or genomic region (coded as custom:chr:start-end). Jobs are limited to 1.5 Mbp in total (with controls)."
 
     - id: genomic_dataset
-      description : Genome Build <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/FAQ/#how-do-i-request-a-new-genome" target="_blank">Missing your genome ?</a>)
+      description : Genome Build <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/FAQ/#how-do-i-request-a-new-genome" target="_blank">Missing your genome ?</a>)
       type: dataset
       required : true
       category: genomic_database
@@ -229,7 +229,7 @@ workflow:
       type: separator
 
     - id : cas_dataset
-      description : Cas variant <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#cas-variant-available" target="_blank">Details</a>)
+      description : Cas variant <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/More_information/#cas-variant-available" target="_blank">Details</a>)
       required : true
       type : dataset
       category : cas_database
@@ -237,7 +237,7 @@ workflow:
       serialize: false
 
     - id : Editors
-      description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#editors" target="_blank">Details</a>)
+      description : Editors (<a href="https://cerc-genomic-medicine.ca/Manuals/More_information/#editors" target="_blank">Details</a>)
       required : true
       type : textarea
       details : 'Space-delimited description of editors. Columns: id, start window of activity, end window of activity, nucleotide modified, resulting nucleotide.'
@@ -261,7 +261,7 @@ workflow:
       details : 'Accepted range: 0-10 ; blank for unfiltered'
 
     - id : CFD_Threshold
-      description : Threshold score for off-targets (CDF score) <br>  (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#off-target-scores" target="_blank">Details</a>)
+      description : Threshold score for off-targets (CDF score) <br>  (<a href="https://cerc-genomic-medicine.ca/Manuals/More_information/#off-target-scores" target="_blank">Details</a>)
       required : false
       type : number
       details : Float number ]0-1]
@@ -272,7 +272,7 @@ workflow:
       type: separator
 
     - id : Positive_genes 
-      description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
+      description : Positive control protein(s) or regions(s) (optional) <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       type: textarea
       details : 'A one-entry-per-line file; see gene of interest section'
       required : false
@@ -281,7 +281,7 @@ workflow:
       type: separator
 
     - id : Negative_genes
-      description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/CRISPR-BEasy/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
+      description : Negative control protein(s) or region(s) (optional)  <br> (<a href="https://cerc-genomic-medicine.ca/Manuals/More_information/#positive-and-negative-controls" target="_blank">Details</a>)
       details : 'A one-entry-per-line file; see gene of interest section'
       type: textarea
       required : false

@@ -141,7 +141,7 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
                 else :
                     accepted.extend([s.lower() for s in input_consequence])
             if 'none' in accepted:
-                acceptable_guides=pos_Annotation.loc[[row.editor == inst.editor],'ID']
+                acceptable_guides=pos_Annotation.loc[pos_Annotation['editor'] == inst.editor,'ID']
             else :
                 acceptable_guides = pos_Annotation[
                                         (pos_Annotation['editor'] == inst.editor) &
@@ -160,7 +160,7 @@ def Positive_library_sel(instructions,Positive_L,pos_Annotation):
         if error_list_positive :
             return [],[],error_list_positive
         else : 
-            Unused=Positive_L.loc[[P in acceptable for P in Positive_L['ID']], :]
+            Unused=Positive_L.loc[[P not in acceptable for P in Positive_L['ID']], :]
             return Used, Unused, error_list_positive
             
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     if args.Positive: 
         Positive = pd.read_csv(args.Positive)
         Positive, removed_positive = filter_restriction_sgrna(Positive, "positive control library")
-        instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'])
+        instructions=pd.read_csv(args.Positive_instructions, sep=' ', names=['editor' ,'N', 'Consequence'], keep_default_na=False)
         Positive_length= sum([int(i) for i in instructions['N']])
     else :
         Positive = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand'])
@@ -201,6 +201,7 @@ if __name__ == '__main__':
     else :  
         Negative = pd.DataFrame(columns = ['ID','protospacer','Chromosome', 'POSstart', 'strand'])
         N=0
+    t_VEP = p_VEP = n_VEP = pd.DataFrame(columns = ['ID','editor','Consequence'])
     if args.target_VEP:
         t_VEP = pd.read_csv(args.target_VEP)
         t_VEP = t_VEP.loc[t_VEP['ID'].isin(Target['ID']), :]
@@ -244,7 +245,7 @@ if __name__ == '__main__':
             remainder=0
         elif (remainder + N ) > len(Negative['ID']) and not error_list :
             log.append(f"{(SguidePerConcat - remainder)} Negative library guides were removed due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")
-            Library_list.append(Negative.sample(args.negative_number -(SguidePerConcat - remainder),random_state=11,axis=0))
+            Library_list.append(Negative.sample(N -(SguidePerConcat - remainder),random_state=11,axis=0))
             remainder=0
         else :
             error_list.append(f" Negative library was too short to overcome the burden of completing concatamer \n Means there would be no Negative controls")
@@ -259,7 +260,7 @@ if __name__ == '__main__':
             if remainder == 0:
                 Library_list.append(Used)
             elif len(Unused['ID'])> remainder:
-                Library_list.append(Unused.sample(remainder),random_state=11,axis=0)
+                Library_list.append(Unused.sample(remainder,random_state=11,axis=0))
                 Library_list.append(Used)
                 if not error_list:
                     log.append(f"{(remainder)} Positive library guides were added at random (amongs specified editors/consqueneces) due to incomplete concatemer \n Normally in this case negative guides are added but too few were provided")

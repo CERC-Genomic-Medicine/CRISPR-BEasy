@@ -6,18 +6,9 @@ VERSION: 1.1
 YEAR: 2024
 '''
 
-import sys
-print(sys.version)
-from Bio import SeqIO
-from Bio.Seq import Seq
 import pandas as pd
-import numpy as np
-import os
-from pathlib import Path
 import argparse
 import re
-import gffutils
-import warnings
 
 argparser = argparse.ArgumentParser(
     description='This software produces a bed file corresponding to the regions of interest as defined by a protein (corresponding to a genome) and the desired Feature. This represent the first step (potentially optional) in producing a library design crispr Array')
@@ -52,16 +43,16 @@ def validate_instruction_file(file_path, editors_correct):
             with open('editor.blank', 'w') as blank_file:
                 pass
                 return
-        for line_num, line in enumerate(lines, start=0):
-            columns = str(line.strip()).split(" ")
-            # Check if there are exactly 5 columns
-            if len(columns) ==0:
+        for line_num, line in enumerate(lines, start=1):
+            if not line.strip():
                 continue
+            columns = str(line.strip()).split(" ")
             if len(columns) != 3:
                 errors.append(f"Line {line_num}: Expected 3 columns, found {len(columns)}")
                 continue
             if columns[0] not in editors_correct :
-                error.append(f"Line {line_num}: editor {columns[0]} is not found in the list of editors found in positive library's sheet")
+                errors.append(f"Line {line_num}: editor {columns[0]} is not found in the list of editors found in positive library's sheet")
+                continue
             try:
                 int(columns[1])
             except:

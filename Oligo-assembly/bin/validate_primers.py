@@ -8,18 +8,8 @@ YEAR: 2024
 Expension possible: Testing annealing temperature, testing selfing etc.
 '''
 
-import sys
-print(sys.version)
-from Bio import SeqIO
-from Bio.Seq import Seq
-import pandas as pd
-import numpy as np
-import os
-from pathlib import Path
 import argparse
 import re
-import gffutils
-import warnings
 
 argparser = argparse.ArgumentParser(
     description='This script validates the primers.')

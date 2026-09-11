@@ -17,6 +17,7 @@ input:
 
 
  publishDir "${params.Auxiliary_files}/Crispr/", pattern: "*_problematic.txt", mode: "copy"
+ publishDir "${params.Debug}/Debug/", pattern: "*.txt", mode: "copy"
         script:
 
 

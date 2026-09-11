@@ -168,5 +168,5 @@ if __name__ == '__main__':
                                                         alt= str(row['editing_window_mutated']) ,
                                                         END='.',
                                                         FILTER ='.' ,
-                                                        INFO=f'Protospacer={row['protospacer']};PAM={row['PAM']};STRAND={row.strand};Nchange= {str(row.nchange)} ;MutationFullWindow={row.MutationFullWindow};Library={args.Name}'))
+                                                        INFO=f'Protospacer={row["protospacer"]};PAM={row["PAM"]};STRAND={row.strand};Nchange= {str(row.nchange)} ;MutationFullWindow={row.MutationFullWindow};Library={args.Name}'))
 
